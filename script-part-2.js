@@ -834,7 +834,7 @@ function renderGateTeams(selected){
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "teamBtn" + (entry.id === selected ? " selected" : "");
-    btn.innerHTML = `<span class="teamBtnLabel">${escapeHtml(entry.identity.displayName)}</span><span class="teamBtnMeta">${escapeHtml(entry.finished ? "Finished race" : entry.found > 0 ? `${entry.found} clues cleared` : "Ready to join")}</span>`;
+    btn.innerHTML = `<span class="teamBtnLabel">${escapeHtml(entry.identity.displayName)}</span><div class="teamBtnBadges">${identityBadgeStripMarkup(entry.identity, { showMascotLabel: true, flagLimit: 2 })}</div><span class="teamBtnMeta">${escapeHtml(entry.finished ? "Finished race" : entry.found > 0 ? `${entry.found} clues cleared` : "Ready to join")}</span>`;
     btn.addEventListener("click", async () => {
       const selectedTeam = entry.id;
       teamKey = selectedTeam;
@@ -867,7 +867,7 @@ function renderTop(){
   el("hintStatus").textContent = !clueAllowsHint(activeId)
     ? "No hint for this clue"
     : (locked ? `Next hint in ${fmtCountdown(toMillis(state.nextHintAt) - now)}` : (stats.remaining <= 0 ? "No hints left" : "Hint ready"));
-  el("teamDisplay").innerHTML = `${mascotBadgeMarkup(identity, { showLabel: true })}<span><strong>${escapeHtml(identity.displayName)}</strong><div class="small">${escapeHtml(identity.mascot.title)}</div></span>`;
+  el("teamDisplay").innerHTML = `<div class="teamDisplayBlock"><strong>${escapeHtml(identity.displayName)}</strong>${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}</div>`;
   applyTeamTheme(state.teamName, teamKey);
   renderDeviceState();
   updateFinalMissionMode();
@@ -943,7 +943,7 @@ function renderBoard(){
         <div class="leaderText">
           <strong>${place}. ${escapeHtml(identity.displayName)}</strong>
           <div class="leaderSubline">
-            ${mascotBadgeMarkup(identity, { showLabel: true })}
+            ${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}
             <span class="leaderMiniMeta">${escapeHtml(row.finished ? "Finished" : row.found > 0 ? `${row.found} clues cleared` : "Ready")}</span>
             ${place <= 3 && row.finished ? `<span class="candyBadge">🏅 ${escapeHtml(placementPrizeText(place))}</span>` : ""}
           </div>
@@ -982,7 +982,7 @@ function renderAdminStatuses(){
     row.innerHTML = `
       <strong>${escapeHtml(identity.displayName)}</strong>
       <div class="leaderSubline">
-        ${mascotBadgeMarkup(identity, { showLabel: true })}
+        ${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}
         <span class="leaderMiniMeta">${escapeHtml(progress.finished ? "Finished" : `Step ${Math.min(progress.progressIndex + 1, teamTotal(key))} of ${teamTotal(key)}`)}</span>
       </div>
       <div class="adminStatusLocation">${progress.finished ? "Finished" : current ? `On clue ${progress.progressIndex + 1}: ${escapeHtml(current.location)}` : "Not started"}</div>

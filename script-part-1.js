@@ -15,6 +15,62 @@ const MASCOTS = {
   fox: { label: "Foxes", emoji: "🦊", badgeClass: "mascot-fox", title: "Glowtrail Crew", flavor: "Quick pivots, colorful flair, and clever route wins." },
   cobra: { label: "Cobras", emoji: "🐍", badgeClass: "mascot-cobra", title: "Neon Strike", flavor: "Patient reads, perfect timing, and clean rainbow finishes." }
 };
+const PRIDE_FLAGS = Object.freeze([
+  { key: "progress", label: "Progress", aliases: ["inclusive", "lgbtq+", "progress pride"], background: "linear-gradient(135deg,#111 0 10%,#613915 10% 18%,#5bcffb 18% 30%,#f5abb9 30% 42%,#fff 42% 54%,#f5abb9 54% 66%,#5bcffb 66% 78%,#613915 78% 86%,#111 86% 92%,#e40303 92% 100%)" },
+  { key: "rainbow", label: "Rainbow Pride", aliases: ["classic pride", "gay pride", "lgbt"], background: "linear-gradient(180deg,#e40303 0 16%,#ff8c00 16% 32%,#ffed00 32% 48%,#008026 48% 64%,#24408e 64% 80%,#732982 80%)" },
+  { key: "ally", label: "Ally", aliases: ["straight ally", "ally pride"], background: "linear-gradient(90deg,#111 0 24%,#fff 24% 36%,#111 36% 48%,#fff 48% 60%,#111 60% 72%,#fff 72% 84%,#111 84%), linear-gradient(180deg,transparent 0 22%,#e40303 22% 34%,#ff8c00 34% 46%,#ffed00 46% 58%,#008026 58% 70%,#24408e 70% 82%,#732982 82%)" },
+  { key: "lesbian", label: "Lesbian", aliases: ["wlw"], background: "linear-gradient(180deg,#d62900 0 20%,#ff9b55 20% 40%,#fff 40% 60%,#d462a6 60% 80%,#a50062 80%)" },
+  { key: "gaymen", label: "Gay Men", aliases: ["mlm", "men loving men"], background: "linear-gradient(180deg,#078d70 0 20%,#26ceaa 20% 40%,#98e8c1 40% 52%,#7bade2 52% 72%,#5049cc 72%)" },
+  { key: "bi", label: "Bisexual", aliases: ["bisexuality"], background: "linear-gradient(180deg,#d60270 0 40%,#9b4f96 40% 60%,#0038a8 60%)" },
+  { key: "pan", label: "Pansexual", aliases: ["pan"], background: "linear-gradient(180deg,#ff1b8d 0 33%,#ffd900 33% 66%,#1bb3ff 66%)" },
+  { key: "omni", label: "Omnisexual", aliases: ["omni"], background: "linear-gradient(180deg,#ff9ad5 0 24%,#ff53bf 24% 48%,#220244 48% 68%,#6755ff 68% 84%,#8bd4ff 84%)" },
+  { key: "polysexual", label: "Polysexual", aliases: ["polysexuality"], background: "linear-gradient(180deg,#f61cb9 0 33%,#07d569 33% 66%,#1c92f6 66%)" },
+  { key: "abrosexual", label: "Abrosexual", aliases: ["abro"], background: "linear-gradient(180deg,#75ca92 0 20%,#b2e4c5 20% 40%,#fff 40% 60%,#e695b5 60% 80%,#d9446b 80%)" },
+  { key: "asexual", label: "Asexual", aliases: ["ace"], background: "linear-gradient(180deg,#111 0 25%,#a6a6a6 25% 50%,#fff 50% 75%,#7a007a 75%)" },
+  { key: "graysexual", label: "Graysexual", aliases: ["gray ace", "greysexual", "gray-asexual"], background: "linear-gradient(180deg,#6f258d 0 22%,#b7b7b7 22% 44%,#fff 44% 66%,#b7b7b7 66% 84%,#6f258d 84%)" },
+  { key: "demisexual", label: "Demisexual", aliases: ["demi ace"], background: "linear-gradient(120deg,#111 0 18%,transparent 18%), linear-gradient(180deg,#fff 0 30%,#7f7f7f 30% 58%,#7a007a 58%)" },
+  { key: "aromantic", label: "Aromantic", aliases: ["aro"], background: "linear-gradient(180deg,#3aa63f 0 20%,#a8d47a 20% 40%,#fff 40% 60%,#ababab 60% 80%,#111 80%)" },
+  { key: "grayromantic", label: "Grayromantic", aliases: ["greyromantic", "gray aro"], background: "linear-gradient(180deg,#2f8f40 0 22%,#a8d47a 22% 44%,#fff 44% 66%,#b4b4b4 66% 84%,#111 84%)" },
+  { key: "demiromantic", label: "Demiromantic", aliases: ["demi aro"], background: "linear-gradient(120deg,#111 0 18%,transparent 18%), linear-gradient(180deg,#fff 0 30%,#a8d47a 30% 58%,#3aa63f 58%)" },
+  { key: "aroace", label: "Aroace", aliases: ["aromantic asexual"], background: "linear-gradient(180deg,#e28c00 0 20%,#eccd00 20% 40%,#fff 40% 60%,#62aedc 60% 80%,#203856 80%)" },
+  { key: "queer", label: "Queer", aliases: ["queer pride"], background: "linear-gradient(180deg,#000 0 20%,#9ad9ea 20% 40%,#fff 40% 60%,#f7a8b8 60% 80%,#6b1b62 80%)" },
+  { key: "questioning", label: "Questioning", aliases: ["unsure", "exploring"], background: "linear-gradient(180deg,#5a388f 0 20%,#8460c4 20% 40%,#fff 40% 60%,#a6e1fa 60% 80%,#4fb3d9 80%)" },
+  { key: "trans", label: "Transgender", aliases: ["trans"], background: "linear-gradient(180deg,#5bcffb 0 20%,#f5abb9 20% 40%,#fff 40% 60%,#f5abb9 60% 80%,#5bcffb 80%)" },
+  { key: "nonbinary", label: "Nonbinary", aliases: ["nb", "enby"], background: "linear-gradient(180deg,#fcf434 0 25%,#fff 25% 50%,#9c59d1 50% 75%,#2f2f2f 75%)" },
+  { key: "genderqueer", label: "Genderqueer", aliases: ["gq"], background: "linear-gradient(180deg,#b57edc 0 33%,#fff 33% 66%,#4a8123 66%)" },
+  { key: "genderfluid", label: "Genderfluid", aliases: ["gf"], background: "linear-gradient(180deg,#ff75a2 0 20%,#fff 20% 40%,#be18d6 40% 60%,#111 60% 80%,#333ebd 80%)" },
+  { key: "genderflux", label: "Genderflux", aliases: ["gf flux"], background: "linear-gradient(180deg,#f47694 0 18%,#f2a2b9 18% 36%,#c7c7c7 36% 54%,#7ce0f7 54% 72%,#3ecdf9 72% 88%,#fff 88%)" },
+  { key: "agender", label: "Agender", aliases: ["agender pride"], background: "linear-gradient(180deg,#111 0 16%,#b9b9b9 16% 32%,#fff 32% 48%,#b8f483 48% 64%,#fff 64% 80%,#b9b9b9 80% 100%)" },
+  { key: "bigender", label: "Bigender", aliases: ["bi gender"], background: "linear-gradient(180deg,#c479a2 0 16%,#eda5cd 16% 32%,#d6c7e8 32% 48%,#fff 48% 64%,#d6c7e8 64% 80%,#9ac7e8 80% 90%,#6d82d1 90%)" },
+  { key: "pangender", label: "Pangender", aliases: ["all genders"], background: "linear-gradient(180deg,#fff798 0 20%,#feddcc 20% 40%,#ffebfb 40% 60%,#fff 60% 80%,#ffebfb 80%)" },
+  { key: "demiboy", label: "Demiboy", aliases: ["demi boy"], background: "linear-gradient(180deg,#7f7f7f 0 14%,#c4c4c4 14% 28%,#9ad9eb 28% 42%,#fff 42% 56%,#9ad9eb 56% 70%,#c4c4c4 70% 84%,#7f7f7f 84%)" },
+  { key: "demigirl", label: "Demigirl", aliases: ["demi girl"], background: "linear-gradient(180deg,#7f7f7f 0 14%,#c4c4c4 14% 28%,#f7c1d9 28% 42%,#fff 42% 56%,#f7c1d9 56% 70%,#c4c4c4 70% 84%,#7f7f7f 84%)" },
+  { key: "androgyne", label: "Androgyne", aliases: ["androgynous"], background: "linear-gradient(180deg,#fe007f 0 33%,#9832ff 33% 66%,#00b8e7 66%)" },
+  { key: "neutrois", label: "Neutrois", aliases: ["neutral gender"], background: "linear-gradient(180deg,#fff 0 33%,#1a1a1a 33% 66%,#32cc32 66%)" },
+  { key: "intersex", label: "Intersex", aliases: ["intersex pride"], background: "radial-gradient(circle at center, transparent 0 25%, #7a01aa 25% 35%, transparent 35%), linear-gradient(180deg,#ffd800,#ffd800)" },
+  { key: "twospirit", label: "Two-Spirit", aliases: ["2s", "two spirit"], background: "linear-gradient(180deg,#d51d00 0 20%,#ff9a56 20% 40%,#ffd787 40% 60%,#6bd16b 60% 80%,#1976d2 80%)" },
+  { key: "xenogender", label: "Xenogender", aliases: ["xeno"], background: "linear-gradient(180deg,#ff8ec7 0 20%,#ffb5d8 20% 40%,#fff 40% 60%,#b7f7f1 60% 80%,#6ce7dc 80%)" },
+  { key: "aceflux", label: "Aceflux", aliases: ["ace flux"], background: "linear-gradient(180deg,#7a007a 0 20%,#a6a6a6 20% 40%,#fff 40% 60%,#cfcfcf 60% 80%,#8cd5f5 80%)" },
+  { key: "aroflux", label: "Aroflux", aliases: ["aro flux"], background: "linear-gradient(180deg,#3aa63f 0 20%,#6bcf6f 20% 40%,#b6f3b7 40% 60%,#fff 60% 80%,#a8d47a 80%)" },
+  { key: "sapphic", label: "Sapphic", aliases: ["women loving women"], background: "linear-gradient(180deg,#fc94be 0 20%,#ffccd9 20% 40%,#fff 40% 60%,#c79cff 60% 80%,#5b3f94 80%)" },
+  { key: "achillean", label: "Achillean", aliases: ["men loving men pride"], background: "linear-gradient(180deg,#4ec5b2 0 20%,#c5f4d6 20% 40%,#fff 40% 60%,#7cc0ef 60% 80%,#2f5890 80%)" },
+  { key: "polyamory", label: "Polyamory", aliases: ["polyam"], background: "linear-gradient(180deg,#0000ff 0 33%,#ff0000 33% 66%,#111 66%), radial-gradient(circle at center, #ffd700 0 18%, transparent 18%)" }
+]);
+const PRIDE_FLAG_MAP = Object.freeze(PRIDE_FLAGS.reduce((acc, flag) => {
+  acc[flag.key] = flag;
+  return acc;
+}, {}));
+const PRIDE_FLAG_ALIAS_MAP = Object.freeze((() => {
+  const map = {};
+  PRIDE_FLAGS.forEach(flag => {
+    [flag.key, flag.label, ...(flag.aliases || [])].forEach(alias => {
+      map[normalizeTeamName(alias)] = flag.key;
+    });
+  });
+  return map;
+})());
+const DEFAULT_PRIDE_FLAG_KEYS = Object.freeze(["progress"]);
+const DECORATIVE_FLAG_KEYS = Object.freeze(PRIDE_FLAGS.map(flag => flag.key));
 const MAP_ENABLED_KEY = `${STORAGE_PREFIX}-map-enabled`;
 const GAME_PRESETS_KEY = `${STORAGE_PREFIX}-game-presets`;
 const ACTIVE_GAME_PRESET_KEY = `${STORAGE_PREFIX}-active-game-preset`;
@@ -197,6 +253,7 @@ function releaseTeamSelection(message){
   setGateMode("join");
   renderGateTeams(null);
   populateMascotOptions();
+  populateFlagOptions();
   if (el("gateTeamName")) el("gateTeamName").value = "";
   setScanInsight();
   renderDeviceState();
@@ -422,6 +479,140 @@ function mascotMeta(key){
   return MASCOTS[normalizeMascotKey(key)];
 }
 
+function normalizeFlagKey(key){
+  return PRIDE_FLAG_ALIAS_MAP[normalizeTeamName(key)] || null;
+}
+
+function normalizeFlagKeys(keys){
+  const source = Array.isArray(keys) ? keys : String(keys || "").split(",");
+  const selected = [];
+  const seen = new Set();
+  source.forEach(value => {
+    const normalized = normalizeFlagKey(value);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    selected.push(normalized);
+  });
+  return selected;
+}
+
+function flagKeysOrDefault(keys){
+  const normalized = normalizeFlagKeys(keys);
+  return normalized.length ? normalized : DEFAULT_PRIDE_FLAG_KEYS.slice();
+}
+
+function prideFlagMeta(key){
+  return PRIDE_FLAG_MAP[normalizeFlagKey(key)] || PRIDE_FLAG_MAP[DEFAULT_PRIDE_FLAG_KEYS[0]];
+}
+
+function flagSummaryText(keys, limit = 3){
+  const labels = flagKeysOrDefault(keys).map(key => prideFlagMeta(key).label);
+  if (labels.length <= limit) return labels.join(", ");
+  return `${labels.slice(0, limit).join(", ")} +${labels.length - limit}`;
+}
+
+function flagChipMarkup(flagOrKey, opts = {}){
+  const flag = typeof flagOrKey === "string" ? prideFlagMeta(flagOrKey) : flagOrKey;
+  const compactClass = opts.compact ? " compact" : "";
+  return `<span class="flagChip${compactClass}" style="--flag-bg:${flag.background}"><span>${escapeHtml(flag.label)}</span></span>`;
+}
+
+function identityFlagChipsMarkup(identity, opts = {}){
+  const limit = Number.isFinite(opts.limit) ? opts.limit : 3;
+  const flags = identity?.flags?.length ? identity.flags : flagKeysOrDefault(identity?.flagKeys).map(prideFlagMeta);
+  const chips = flags.slice(0, limit).map(flag => flagChipMarkup(flag, { compact: opts.compact !== false }));
+  if (flags.length > limit) chips.push(`<span class="flagMoreCount">+${flags.length - limit}</span>`);
+  return chips.join("");
+}
+
+function identityBadgeStripMarkup(identity, opts = {}){
+  if (!identity) return "";
+  const pieces = [];
+  if (!opts.skipMascot) pieces.push(mascotBadgeMarkup(identity, { showLabel: !!opts.showMascotLabel }));
+  pieces.push(identityFlagChipsMarkup(identity, { limit: opts.flagLimit ?? 3, compact: opts.compact !== false }));
+  return `<div class="identityBadges">${pieces.join("")}</div>`;
+}
+
+function selectedGateFlagKeys(){
+  return normalizeFlagKeys(el("gateFlagValues")?.value || "");
+}
+
+function updateGateFlagSummary(selectedKeys = selectedGateFlagKeys()){
+  const summary = el("gateFlagSummary");
+  if (!summary) return;
+  if (!selectedKeys.length){
+    summary.textContent = "No identities selected yet. Progress will be used if you start right now.";
+    return;
+  }
+  const count = selectedKeys.length;
+  summary.textContent = `${count} ${count === 1 ? "identity" : "identities"} selected: ${flagSummaryText(selectedKeys, 4)}.`;
+}
+
+function renderDecorativeFlagShelf(id, keys){
+  const mount = el(id);
+  if (!mount) return;
+  mount.innerHTML = keys.map(key => flagChipMarkup(key, { compact: true })).join("");
+}
+
+function populateDecorativeFlagShelves(){
+  renderDecorativeFlagShelf("gateFlagShelf", DECORATIVE_FLAG_KEYS.slice(0, 16));
+  renderDecorativeFlagShelf("heroFlagShelf", DECORATIVE_FLAG_KEYS);
+}
+
+function renderFlagCards(selectedKeys = selectedGateFlagKeys(), locked = false, filterText = el("gateFlagSearch")?.value || ""){
+  const mount = el("gateFlagCards");
+  if (!mount) return;
+  const active = new Set(normalizeFlagKeys(selectedKeys));
+  const query = normalizeTeamName(filterText || "");
+  const matches = PRIDE_FLAGS.filter(flag => {
+    if (!query) return true;
+    return [flag.label, flag.key, ...(flag.aliases || [])].some(value => normalizeTeamName(value).includes(query));
+  });
+  mount.innerHTML = "";
+  if (!matches.length){
+    mount.innerHTML = `<div class="note">No identities matched that search yet.</div>`;
+    return;
+  }
+  matches.forEach(flag => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `flagChoice${active.has(flag.key) ? " active" : ""}`;
+    button.disabled = !!locked;
+    button.setAttribute("aria-pressed", String(active.has(flag.key)));
+    button.innerHTML = `${flagChipMarkup(flag, { compact: true })}<div class="flagChoiceCopy"><strong>${escapeHtml(flag.label)}</strong><small>${escapeHtml((flag.aliases || []).slice(0, 2).join(" • ") || "Pride identity")}</small></div>`;
+    button.addEventListener("click", () => {
+      if (locked) return;
+      const next = active.has(flag.key)
+        ? selectedGateFlagKeys().filter(key => key !== flag.key)
+        : [...selectedGateFlagKeys(), flag.key];
+      const hidden = el("gateFlagValues");
+      if (hidden) hidden.value = normalizeFlagKeys(next).join(",");
+      renderFlagCards(next, false, el("gateFlagSearch")?.value || "");
+      updateGateFlagSummary(next);
+      updateMascotPreview(el("gateMascotSelect")?.value || DEFAULT_MASCOT, next);
+      renderDeviceState();
+    });
+    mount.appendChild(button);
+  });
+}
+
+function populateFlagOptions(selected = DEFAULT_PRIDE_FLAG_KEYS, locked = false, options = {}){
+  const hidden = el("gateFlagValues");
+  const search = el("gateFlagSearch");
+  const normalized = normalizeFlagKeys(selected);
+  if (hidden) hidden.value = normalized.join(",");
+  if (search){
+    search.disabled = !!locked;
+    if (!options.preserveFilter) search.value = "";
+    if (!search.dataset.flagSearchBound){
+      search.addEventListener("input", () => renderFlagCards(selectedGateFlagKeys(), !!search.disabled, search.value));
+      search.dataset.flagSearchBound = "true";
+    }
+  }
+  renderFlagCards(normalized, locked, search?.value || "");
+  updateGateFlagSummary(normalized);
+}
+
 function syncMessageForState(mode){
   if (mode === "live") return "Shared game live across devices.";
   if (mode === "local") return "Using this device only.";
@@ -488,7 +679,7 @@ function updateThemePill(rawValue = state?.teamName, team = teamKey){
   }
   const identity = teamIdentity(rawValue, team);
   pill.className = `teamThemePill ${identity.mascot.badgeClass}`;
-  pill.textContent = `${identity.mascot.emoji} ${identity.mascot.title}`;
+  pill.textContent = `${identity.mascot.emoji} ${identity.mascot.title} • ${flagSummaryText(identity.flagKeys, 1)}`;
 }
 
 function renderDeviceState(){
@@ -522,12 +713,12 @@ function renderDeviceState(){
         meta.textContent = `Ready to join ${teamIdentity(rawValue, activeTeam).displayName} on this device.`;
       } else {
         meta.textContent = gateMode === "create"
-          ? "Create a team, choose a mascot, and start the Pride race."
+          ? "Create a team, choose a mascot, stack identities, and start the Pride race."
           : "Join an existing team or create a new one.";
       }
     } else {
       const identity = teamIdentity(rawValue, activeTeam);
-      meta.textContent = `${identity.mascot.title}: ${identity.mascot.flavor}`;
+      meta.textContent = `${identity.mascot.title}: ${identity.mascot.flavor} Pride mix: ${flagSummaryText(identity.flagKeys, 3)}.`;
     }
   }
   if (gateNote){
@@ -559,7 +750,7 @@ function updateGateSelectionStatus(locked = false, identity = parseTeamIdentity(
   }
   status.textContent = locked
     ? `${identity.displayName} is ready to create.`
-    : "Create a team, pick a mascot, and the site will assign a random clue order with a live finish clock.";
+    : "Create a team, pick a mascot, stack one or more identities, and the site will assign a random clue order with a live finish clock.";
 }
 
 function renderMascotCards(selected = DEFAULT_MASCOT, locked = false){
@@ -586,22 +777,26 @@ function renderMascotCards(selected = DEFAULT_MASCOT, locked = false){
   });
 }
 
-function encodeTeamIdentity(displayName, mascotKey = DEFAULT_MASCOT, fallbackName = "Team"){
+function encodeTeamIdentity(displayName, mascotKey = DEFAULT_MASCOT, fallbackName = "Team", flagKeys = DEFAULT_PRIDE_FLAG_KEYS){
   const cleanName = (displayName || fallbackName || "Team").trim() || fallbackName || "Team";
-  return `${cleanName}${TEAM_IDENTITY_SEPARATOR}${normalizeMascotKey(mascotKey)}`;
+  return `${cleanName}${TEAM_IDENTITY_SEPARATOR}${normalizeMascotKey(mascotKey)}${TEAM_IDENTITY_SEPARATOR}${flagKeysOrDefault(flagKeys).join(",")}`;
 }
 
 function parseTeamIdentity(rawValue, fallbackName = "Team"){
   const fallback = (fallbackName || "Team").trim() || "Team";
   if (!rawValue || typeof rawValue !== "string") {
     const mascot = mascotMeta(DEFAULT_MASCOT);
-    return { raw: encodeTeamIdentity(fallback, DEFAULT_MASCOT, fallback), displayName: fallback, mascotKey: DEFAULT_MASCOT, mascot };
+    const flagKeys = DEFAULT_PRIDE_FLAG_KEYS.slice();
+    const flags = flagKeys.map(prideFlagMeta);
+    return { raw: encodeTeamIdentity(fallback, DEFAULT_MASCOT, fallback, flagKeys), displayName: fallback, mascotKey: DEFAULT_MASCOT, mascot, flagKeys, flags, primaryFlag: flags[0] };
   }
   const pieces = rawValue.split(TEAM_IDENTITY_SEPARATOR);
   const displayName = (pieces[0] || fallback).trim() || fallback;
   const mascotKey = normalizeMascotKey((pieces[1] || "").trim());
   const mascot = mascotMeta(mascotKey);
-  return { raw: encodeTeamIdentity(displayName, mascotKey, fallback), displayName, mascotKey, mascot };
+  const flagKeys = flagKeysOrDefault((pieces[2] || "").split(","));
+  const flags = flagKeys.map(prideFlagMeta);
+  return { raw: encodeTeamIdentity(displayName, mascotKey, fallback, flagKeys), displayName, mascotKey, mascot, flagKeys, flags, primaryFlag: flags[0] };
 }
 
 function teamIdentity(rawValue, team = teamKey){
@@ -635,12 +830,13 @@ function applyTeamTheme(rawValue, team = teamKey){
   body.classList.add(teamThemeClass(rawValue, team));
 }
 
-function updateMascotPreview(selected){
+function updateMascotPreview(selected, flagKeys = selectedGateFlagKeys()){
   const preview = el("gateMascotPreview");
   if (!preview) return;
   const mascot = mascotMeta(selected);
+  const activeFlagKeys = flagKeysOrDefault(flagKeys);
   preview.className = `mascotPreviewCard ${mascot.badgeClass}`;
-  preview.innerHTML = `<span class="mascotPreviewEmoji">${mascot.emoji}</span><div><strong>${escapeHtml(mascot.label)} • ${escapeHtml(mascot.title)}</strong><div class="small">${escapeHtml(mascot.flavor)} This mascot becomes your badge, color theme, and race vibe.</div></div>`;
+  preview.innerHTML = `<span class="mascotPreviewEmoji">${mascot.emoji}</span><div><strong>${escapeHtml(mascot.label)} • ${escapeHtml(mascot.title)}</strong><div class="small">${escapeHtml(mascot.flavor)} This mascot becomes your badge, color theme, and race vibe.</div><div class="identityBadges previewFlagBadges">${activeFlagKeys.map(flag => flagChipMarkup(flag, { compact: true })).join("")}</div></div>`;
 }
 
 function setTeamIdentityInputs(rawValue, locked){
@@ -649,7 +845,9 @@ function setTeamIdentityInputs(rawValue, locked){
   const input = el("gateTeamName");
   const select = el("gateMascotSelect");
   if (input){
-    const displayName = hasTeam ? identity.displayName : "";
+    const displayName = hasTeam
+      ? ((locked || identity.displayName !== "Team") ? identity.displayName : "")
+      : "";
     input.value = locked ? identity.displayName : displayName;
     input.readOnly = !!locked;
     input.disabled = !!locked;
@@ -660,7 +858,8 @@ function setTeamIdentityInputs(rawValue, locked){
     select.disabled = !!locked;
   }
   renderMascotCards(identity.mascotKey, locked);
-  updateMascotPreview(identity.mascotKey);
+  populateFlagOptions(identity.flagKeys, locked);
+  updateMascotPreview(identity.mascotKey, identity.flagKeys);
   updateGateSelectionStatus(locked, identity);
   renderDeviceState();
 }
@@ -670,7 +869,7 @@ function currentGateIdentityRaw(){
   const input = el("gateTeamName");
   const mascotKey = normalizeMascotKey(select?.value || DEFAULT_MASCOT);
   const baseName = (input?.value || "").trim() || "Team";
-  return encodeTeamIdentity(baseName, mascotKey, "Team");
+  return encodeTeamIdentity(baseName, mascotKey, "Team", selectedGateFlagKeys());
 }
 
 function populateMascotOptions(selected = DEFAULT_MASCOT){
@@ -685,13 +884,13 @@ function populateMascotOptions(selected = DEFAULT_MASCOT){
     });
     select.addEventListener("change", () => {
       renderMascotCards(select.value, !!select.disabled);
-      updateMascotPreview(select.value);
+      updateMascotPreview(select.value, selectedGateFlagKeys());
       renderDeviceState();
     });
   }
   select.value = normalizeMascotKey(selected);
   renderMascotCards(select.value, !!select.disabled);
-  updateMascotPreview(select.value);
+  updateMascotPreview(select.value, selectedGateFlagKeys());
 }
 
 function joinableTeamSummaries(){

@@ -825,7 +825,7 @@ async function adminCopySnapshot(){
     const identity = teamIdentity(progress.teamName, key);
     const currentId = sequenceForTeam(key, progress)[progress.progressIndex];
     const current = currentId ? CLUES[currentId] : null;
-    return `${identity.displayName} (${identity.mascot.label}) - ${progress.finished ? `Finished in ${formatDuration(completionTimeMsForState(progress))}` : current ? `On clue ${progress.progressIndex + 1}: ${current.location}` : "Not started"} - ${progress.finished ? "Clock stopped" : `${formatDuration(elapsedTimeMsForState(progress))} live`} - ${progress.completed?.length || 0} clues found`;
+    return `${identity.displayName} (${identity.mascot.label}; ${flagSummaryText(identity.flagKeys, 3)}) - ${progress.finished ? `Finished in ${formatDuration(completionTimeMsForState(progress))}` : current ? `On clue ${progress.progressIndex + 1}: ${current.location}` : "Not started"} - ${progress.finished ? "Clock stopped" : `${formatDuration(elapsedTimeMsForState(progress))} live`} - ${progress.completed?.length || 0} clues found`;
   }).join("\n");
   try {
     await navigator.clipboard.writeText(lines);
@@ -855,7 +855,7 @@ async function adminSaveTeamName(){
 
   let targetState = await loadRemoteProgress(team) || loadLocalState(team);
   const existingIdentity = teamIdentity(targetState.teamName, team);
-  targetState.teamName = encodeTeamIdentity(newName, existingIdentity.mascotKey, teamFallbackLabel(team));
+  targetState.teamName = encodeTeamIdentity(newName, existingIdentity.mascotKey, teamFallbackLabel(team), existingIdentity.flagKeys);
   if (!targetState.finished) targetState.lastUpdatedAt = Date.now();
   await upsertSharedTeamState(team, targetState);
 
@@ -879,7 +879,7 @@ async function adminResetTeam(){
   let existing = await loadRemoteProgress(team) || loadLocalState(team);
   const existingIdentity = teamIdentity(existing.teamName, team);
   const fresh = defaultState(existingIdentity.displayName, normalizeSequence(existing.sequence || generateRandomSequence()));
-  fresh.teamName = encodeTeamIdentity(existingIdentity.displayName, existingIdentity.mascotKey, existingIdentity.displayName);
+  fresh.teamName = encodeTeamIdentity(existingIdentity.displayName, existingIdentity.mascotKey, existingIdentity.displayName, existingIdentity.flagKeys);
   fresh.startedAt = 0;
   fresh.completedAt = 0;
   fresh.completionTimeMs = 0;

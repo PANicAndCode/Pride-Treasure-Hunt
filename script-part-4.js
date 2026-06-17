@@ -102,6 +102,7 @@ if (el("startGameBtn")) {
     if (gateMode === "create") {
       const enteredName = (el("gateTeamName").value || "").trim();
       const selectedMascot = normalizeMascotKey(el("gateMascotSelect")?.value || DEFAULT_MASCOT);
+      const selectedFlags = selectedGateFlagKeys();
       if (!enteredName){
         setFeedback("Enter a team name first.", "warn");
         return;
@@ -117,7 +118,7 @@ if (el("startGameBtn")) {
       }
       teamKey = generateTeamId();
       state = defaultState(enteredName, generateRandomSequence());
-      state.teamName = encodeTeamIdentity(enteredName, selectedMascot, enteredName);
+      state.teamName = encodeTeamIdentity(enteredName, selectedMascot, enteredName, selectedFlags);
       state.startedAt = Date.now();
       state.completedAt = 0;
       state.completionTimeMs = 0;
@@ -237,8 +238,10 @@ async function refreshSharedData(){
 
 (async function boot(){
   loadLocalPresetCache();
+  populateDecorativeFlagShelves();
   renderGateTeams(null);
   populateMascotOptions();
+  populateFlagOptions();
   setGateMode("join");
   renderBoard();
   renderActivityTicker();

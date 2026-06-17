@@ -18,7 +18,7 @@
         </div>
         <div class="gateStep">
           <span>2</span>
-          <div><strong>Name the crew</strong><small>Choose a mascot and rally name.</small></div>
+          <div><strong>Name the crew</strong><small>Choose a mascot, identities, and rally name.</small></div>
         </div>
         <div class="gateStep">
           <span>3</span>
@@ -27,17 +27,7 @@
       </div>
       <h1 class="gateTitle">Welcome to Pride Hunt</h1>
       <p class="gateCopy">Create a team with a mascot and a random clue order, or join one that already exists. Every team gets a live finish clock, and the fastest completed time wins.</p>
-      <div class="flagShelf gateFlagShelf" aria-label="Pride flags">
-        <span class="flagChip flag-progress">Progress Pride</span>
-        <span class="flagChip flag-trans">Trans</span>
-        <span class="flagChip flag-bi">Bi</span>
-        <span class="flagChip flag-lesbian">Lesbian</span>
-        <span class="flagChip flag-pan">Pan</span>
-        <span class="flagChip flag-nonbinary">Nonbinary</span>
-        <span class="flagChip flag-asexual">Asexual</span>
-        <span class="flagChip flag-genderfluid">Genderfluid</span>
-        <span class="flagChip flag-agender">Agender</span>
-      </div>
+      <div id="gateFlagShelf" class="flagShelf gateFlagShelf" aria-label="Pride flags"></div>
       <div class="gateModeSwitch" id="gateModeSwitch">
         <button type="button" class="gateModeBtn active" id="gateModeJoinBtn">Join a team</button>
         <button type="button" class="gateModeBtn" id="gateModeCreateBtn">Create a team</button>
@@ -59,6 +49,15 @@
             <select id="gateMascotSelect" class="visuallyHidden"></select>
             <div id="gateMascotCards" class="mascotCardGrid" role="listbox" aria-label="Mascot choices"></div>
           </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="gateFlagSection">
+          <label class="small" for="gateFlagSearch">Pride identities</label>
+          <input id="gateFlagSearch" placeholder="Search flags or identities">
+          <input id="gateFlagValues" type="hidden">
+          <div class="small gateFlagHint">Pick one or several identities for this team.</div>
+          <div class="small gateFlagSummary" id="gateFlagSummary">Progress is the default until you choose your own mix.</div>
+          <div id="gateFlagCards" class="flagChoiceGrid" role="group" aria-label="Pride identity choices"></div>
         </div>
         <div class="spacer"></div>
         <div id="gateMascotPreview" class="mascotPreviewCard"></div>
@@ -186,17 +185,7 @@
       <div class="badge">🏳️‍🌈 Pride Hunt</div>
       <h1>Decode clues, celebrate loudly, and post the fastest finish time.</h1>
       <p>Each QR code unlocks only the next clue for your team. The live leaderboard tracks who finishes fastest, while the hunt celebrates Pride with bright flags, bold energy, and a whole lot of color.</p>
-      <div class="flagShelf heroFlagShelf" aria-label="Pride flags">
-        <span class="flagChip flag-progress">Progress Pride</span>
-        <span class="flagChip flag-trans">Trans</span>
-        <span class="flagChip flag-bi">Bi</span>
-        <span class="flagChip flag-lesbian">Lesbian</span>
-        <span class="flagChip flag-pan">Pan</span>
-        <span class="flagChip flag-nonbinary">Nonbinary</span>
-        <span class="flagChip flag-asexual">Asexual</span>
-        <span class="flagChip flag-genderfluid">Genderfluid</span>
-        <span class="flagChip flag-agender">Agender</span>
-      </div>
+      <div id="heroFlagShelf" class="flagShelf heroFlagShelf" aria-label="Pride flags"></div>
       <div class="fieldGuide">
         <div class="fieldGuideRow">
           <div class="fieldGuideLabel">Pride guide</div>
