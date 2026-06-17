@@ -95,35 +95,75 @@ document.querySelectorAll(".menuBtn[data-page]").forEach(btn => btn.addEventList
 applyMapVisibility();
 if (el("gateModeJoinBtn")) el("gateModeJoinBtn").addEventListener("click", () => setGateMode("join"));
 if (el("gateModeCreateBtn")) el("gateModeCreateBtn").addEventListener("click", () => setGateMode("create"));
+if (el("gateBackBtn")) el("gateBackBtn").addEventListener("click", () => setGateStage("team"));
 if (el("adminLeaveDeviceBtn")) el("adminLeaveDeviceBtn").addEventListener("click", leaveThisDevice);
+if (el("gatePlayerName")) el("gatePlayerName").addEventListener("input", renderDeviceState);
+if (el("gatePlayerPronouns")) el("gatePlayerPronouns").addEventListener("input", renderDeviceState);
+if (el("gateTeamName")) el("gateTeamName").addEventListener("input", renderDeviceState);
 
 if (el("startGameBtn")) {
   el("startGameBtn").addEventListener("click", async () => {
+    if (gateStage === "team") {
+      if (gateMode === "create") {
+        const enteredName = (el("gateTeamName").value || "").trim();
+        const selectedMascot = normalizeMascotKey(el("gateMascotSelect")?.value || DEFAULT_MASCOT);
+        if (!enteredName){
+          setFeedback("Enter a team name first.", "warn");
+          return;
+        }
+        const existing = findExistingTeamByName(enteredName);
+        if (existing){
+          setFeedback("That team name already exists. Join it instead or choose a new name.", "warn");
+          setGateMode("join");
+          teamKey = existing.id;
+          renderGateTeams(teamKey);
+          renderDeviceState();
+          return;
+        }
+        openProfileStage({
+          teamId: null,
+          identityRaw: encodeTeamIdentity(enteredName, selectedMascot, enteredName),
+          members: []
+        });
+        return;
+      }
+
+      if (!teamKey){
+        setFeedback("Choose a team first.", "warn");
+        return;
+      }
+
+      const remote = await loadRemoteProgress(teamKey);
+      const selectedState = remote || loadLocalState(teamKey);
+      openProfileStage({
+        teamId: teamKey,
+        identityRaw: selectedState.teamName || cachedRawTeamName(teamKey) || teamFallbackLabel(teamKey),
+        members: selectedState.members
+      });
+      return;
+    }
+
+    const profile = currentGatePlayerProfile();
+    if (!profileHasName(profile)){
+      setFeedback("Add your name before starting the hunt.", "warn");
+      return;
+    }
+
+    saveRememberedPlayerProfile(profile);
+    const memberId = ensureRememberedMemberId();
+
     if (gateMode === "create") {
-      const enteredName = (el("gateTeamName").value || "").trim();
-      const selectedMascot = normalizeMascotKey(el("gateMascotSelect")?.value || DEFAULT_MASCOT);
-      const selectedFlags = selectedGateFlagKeys();
-      if (!enteredName){
-        setFeedback("Enter a team name first.", "warn");
-        return;
-      }
-      const existing = findExistingTeamByName(enteredName);
-      if (existing){
-        setFeedback("That team name already exists. Join it instead or choose a new name.", "warn");
-        setGateMode("join");
-        teamKey = existing.id;
-        renderGateTeams(teamKey);
-        renderDeviceState();
-        return;
-      }
+      const draftIdentity = gateProfileIdentity() || parseTeamIdentity(currentGateIdentityRaw(), "Team");
       teamKey = generateTeamId();
-      state = defaultState(enteredName, generateRandomSequence());
-      state.teamName = encodeTeamIdentity(enteredName, selectedMascot, enteredName, selectedFlags);
+      state = defaultState(draftIdentity.displayName, generateRandomSequence());
+      state.teamName = encodeTeamIdentity(draftIdentity.displayName, draftIdentity.mascotKey, draftIdentity.displayName);
+      upsertMemberInState(state, profile, memberId);
       state.startedAt = Date.now();
       state.completedAt = 0;
       state.completionTimeMs = 0;
       state.lastUpdatedAt = state.startedAt;
       rememberTeam(teamKey, state.startedAt);
+      gateProfileTarget = null;
       el("teamGate").classList.add("hidden");
       setFeedback("Your team is live. Start the Pride race.", "success");
       await renderAll();
@@ -132,17 +172,22 @@ if (el("startGameBtn")) {
 
     if (!teamKey){
       setFeedback("Choose a team first.", "warn");
+      setGateStage("team");
       return;
     }
 
     const remote = await loadRemoteProgress(teamKey);
     state = remote || loadLocalState(teamKey);
     state.sequence = normalizeSequence(state.sequence || generateRandomSequence());
+    const currentIdentity = teamIdentity(state.teamName, teamKey);
+    state.teamName = encodeTeamIdentity(currentIdentity.displayName, currentIdentity.mascotKey, currentIdentity.displayName);
+    upsertMemberInState(state, profile, memberId);
     if (!state.startedAt) state.startedAt = Date.now();
     if (!state.completedAt) state.completedAt = 0;
     if (!state.completionTimeMs) state.completionTimeMs = state.finished ? completionTimeMsForState(state) : 0;
-    if (!state.lastUpdatedAt) state.lastUpdatedAt = Date.now();
+    state.lastUpdatedAt = Date.now();
     rememberTeam(teamKey, state.startedAt);
+    gateProfileTarget = null;
     el("teamGate").classList.add("hidden");
     setFeedback(`Joined ${teamIdentity(state.teamName, teamKey).displayName}.`, "success");
     await renderAll();
@@ -194,6 +239,19 @@ async function autoResumeRememberedTeam(){
   if (!state.lastUpdatedAt) state.lastUpdatedAt = Date.now();
   renderGateTeams(saved);
   populateMascotOptions(teamIdentity(state.teamName, saved).mascotKey);
+  if (!profileHasName(playerProfile)) {
+    if (el("teamGate")) el("teamGate").classList.remove("hidden");
+    applyGatePlayerProfile(playerProfile);
+    setGateMode("join");
+    gateProfileTarget = {
+      teamId: saved,
+      identityRaw: state.teamName,
+      members: state.members
+    };
+    openProfileStage(gateProfileTarget);
+    await renderAll({ persist: false });
+    return true;
+  }
   if (el("teamGate")) el("teamGate").classList.add("hidden");
   rememberTeam(saved, state.startedAt);
   await renderAll();
@@ -239,9 +297,9 @@ async function refreshSharedData(){
 (async function boot(){
   loadLocalPresetCache();
   populateDecorativeFlagShelves();
+  applyGatePlayerProfile(playerProfile);
   renderGateTeams(null);
   populateMascotOptions();
-  populateFlagOptions();
   setGateMode("join");
   renderBoard();
   renderActivityTicker();

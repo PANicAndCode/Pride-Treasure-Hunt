@@ -674,9 +674,92 @@ button.amber{
   gap:6px;
 }
 
+.teamBtnRosterMeta{
+  font-size:12px;
+  font-weight:800;
+  color:var(--theme-ink);
+}
+
 .teamDisplayBlock{
   display:grid;
   gap:8px;
+}
+
+.gateProfileSummary{
+  display:grid;
+  gap:10px;
+  padding:14px 16px;
+  border-radius:22px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.84);
+}
+
+.gateProfileTeamCard{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.gateProfileNote{
+  margin-top:10px;
+}
+
+.gateFooterActions{
+  display:grid;
+  grid-template-columns:minmax(0, .75fr) minmax(0, 1.25fr);
+  gap:10px;
+}
+
+.memberRoster{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+
+.memberRoster.compact{
+  gap:6px;
+}
+
+.memberCard{
+  display:grid;
+  gap:6px;
+  padding:10px 12px;
+  border-radius:18px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.78);
+}
+
+.memberCard.compact{
+  padding:8px 10px;
+  border-radius:16px;
+}
+
+.memberHeading{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.memberPronouns{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff2f8;
+  border:1px solid #f4bfd6;
+  color:#8b2455;
+  font-size:12px;
+  font-weight:800;
+}
+
+.memberFlagBadges{
+  gap:6px;
+}
+
+.memberRosterEmpty,
+.memberRosterMore{
+  color:var(--muted);
 }
 
 #teamDisplay{
@@ -816,7 +899,19 @@ p{
     background:rgba(20,15,29,.88);
   }
 
+  .gateProfileSummary,
+  .memberCard{
+    background:rgba(20,15,29,.88);
+    border-color:#473454;
+  }
+
   .flagMoreCount{
+    background:#2f1725;
+    border-color:#5f3550;
+    color:#ffe4f2;
+  }
+
+  .memberPronouns{
     background:#2f1725;
     border-color:#5f3550;
     color:#ffe4f2;
@@ -845,6 +940,10 @@ p{
 
 @media (max-width: 900px){
   .kpis{
+    grid-template-columns:1fr;
+  }
+
+  .gateFooterActions{
     grid-template-columns:1fr;
   }
 }

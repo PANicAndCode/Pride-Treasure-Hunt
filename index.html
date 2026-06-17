@@ -18,56 +18,76 @@
         </div>
         <div class="gateStep">
           <span>2</span>
-          <div><strong>Name the crew</strong><small>Choose a mascot, identities, and rally name.</small></div>
+          <div><strong>About you</strong><small>Add your name, pronouns, and flags.</small></div>
         </div>
         <div class="gateStep">
           <span>3</span>
-          <div><strong>Beat the clock</strong><small>Scan the right checkpoint and race for the fastest finish.</small></div>
+          <div><strong>Start the race</strong><small>Your profile joins the team roster and the clock begins.</small></div>
         </div>
       </div>
       <h1 class="gateTitle">Welcome to Pride Hunt</h1>
-      <p class="gateCopy">Create a team with a mascot and a random clue order, or join one that already exists. Every team gets a live finish clock, and the fastest completed time wins.</p>
+      <p class="gateCopy">Create a team with a mascot and a random clue order, or join one that already exists. Then add each player to the shared roster with their own name, pronouns, and pride flags.</p>
       <div id="gateFlagShelf" class="flagShelf gateFlagShelf" aria-label="Pride flags"></div>
-      <div class="gateModeSwitch" id="gateModeSwitch">
-        <button type="button" class="gateModeBtn active" id="gateModeJoinBtn">Join a team</button>
-        <button type="button" class="gateModeBtn" id="gateModeCreateBtn">Create a team</button>
-      </div>
       <div class="small gatePrompt" id="gateSelectionStatus">Choose an existing team to join.</div>
-      <div class="gateJoinWrap" id="gateJoinWrap">
-        <div class="teamButtons" id="gateTeamButtons"></div>
-        <div class="small emptyJoinNote hidden" id="emptyJoinNote">No teams have been created yet. Switch to Create a team to start the race.</div>
+      <div id="gateTeamStage">
+        <div class="gateModeSwitch" id="gateModeSwitch">
+          <button type="button" class="gateModeBtn active" id="gateModeJoinBtn">Join a team</button>
+          <button type="button" class="gateModeBtn" id="gateModeCreateBtn">Create a team</button>
+        </div>
+        <div class="gateJoinWrap" id="gateJoinWrap">
+          <div class="teamButtons" id="gateTeamButtons"></div>
+          <div class="small emptyJoinNote hidden" id="emptyJoinNote">No teams have been created yet. Switch to Create a team to start the race.</div>
+        </div>
+        <div class="gateCreateWrap hidden" id="gateCreateWrap">
+          <div class="spacer"></div>
+          <div class="gateIdentityGrid">
+            <div>
+              <label class="small" for="gateTeamName">Team name</label>
+              <input id="gateTeamName" placeholder="Enter team name">
+            </div>
+            <div>
+              <label class="small" for="gateMascotSelect">Mascot</label>
+              <select id="gateMascotSelect" class="visuallyHidden"></select>
+              <div id="gateMascotCards" class="mascotCardGrid" role="listbox" aria-label="Mascot choices"></div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div id="gateMascotPreview" class="mascotPreviewCard"></div>
+        </div>
       </div>
-      <div class="gateCreateWrap hidden" id="gateCreateWrap">
+      <div id="gateProfileStage" class="hidden">
+        <div class="gateProfileSummary" id="gateProfileTeamSummary"></div>
+        <div class="small gateProfileNote">This player profile is shared on the team roster so everyone can see who belongs to each team.</div>
         <div class="spacer"></div>
         <div class="gateIdentityGrid">
           <div>
-            <label class="small" for="gateTeamName">Team name</label>
-            <input id="gateTeamName" placeholder="Enter team name">
+            <label class="small" for="gatePlayerName">Your name</label>
+            <input id="gatePlayerName" placeholder="Enter your name">
           </div>
           <div>
-            <label class="small" for="gateMascotSelect">Mascot</label>
-            <select id="gateMascotSelect" class="visuallyHidden"></select>
-            <div id="gateMascotCards" class="mascotCardGrid" role="listbox" aria-label="Mascot choices"></div>
+            <label class="small" for="gatePlayerPronouns">Pronouns</label>
+            <input id="gatePlayerPronouns" placeholder="they/them, she/her, he/him, etc.">
           </div>
         </div>
         <div class="spacer"></div>
         <div class="gateFlagSection">
-          <label class="small" for="gateFlagSearch">Pride identities</label>
+          <label class="small" for="gateFlagSearch">Your pride flags</label>
           <input id="gateFlagSearch" placeholder="Search flags or identities">
           <input id="gateFlagValues" type="hidden">
-          <div class="small gateFlagHint">Pick one or several identities for this team.</div>
-          <div class="small gateFlagSummary" id="gateFlagSummary">Progress is the default until you choose your own mix.</div>
+          <div class="small gateFlagHint">Pick one, several, or skip this section if you want.</div>
+          <div class="small gateFlagSummary" id="gateFlagSummary">No flags selected yet.</div>
           <div id="gateFlagCards" class="flagChoiceGrid" role="group" aria-label="Pride identity choices"></div>
         </div>
-        <div class="spacer"></div>
-        <div id="gateMascotPreview" class="mascotPreviewCard"></div>
       </div>
       <div class="spacer"></div>
       <div class="gateDeviceTools">
         <div class="note gateDeviceNote" id="gateDeviceNote">This phone will remember its team after an admin approves leaving the device.</div>
       </div>
       <div class="spacer"></div>
-      <button class="primary full" id="startGameBtn">Join team</button>
+      <div class="gateFooterActions">
+        <button class="full hidden" id="gateBackBtn" type="button">Back</button>
+        <button class="primary full" id="startGameBtn">Continue</button>
+      </div>
     </div>
   </div>
 

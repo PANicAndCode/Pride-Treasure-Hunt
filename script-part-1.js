@@ -4,6 +4,8 @@ const SITE_NAME = "Pride Hunt";
 const STORAGE_PREFIX = "pride-hunt-v1";
 const REMEMBERED_TEAM_KEY = `${STORAGE_PREFIX}-remembered-team`;
 const REMEMBERED_TEAM_STARTED_KEY = `${STORAGE_PREFIX}-remembered-team-started`;
+const REMEMBERED_PLAYER_PROFILE_KEY = `${STORAGE_PREFIX}-remembered-player-profile`;
+const REMEMBERED_MEMBER_ID_KEY = `${STORAGE_PREFIX}-remembered-member-id`;
 const ADMIN_PASSCODE = "pridehost";
 const TEAM_IDENTITY_SEPARATOR = "|||";
 const DEFAULT_MASCOT = "rabbit";
@@ -113,6 +115,9 @@ let sharedActivities = [];
 let sharedDataPrimed = false;
 let audioContext = null;
 let gateMode = "join";
+let gateStage = "team";
+let gateProfileTarget = null;
+let playerProfile = loadRememberedPlayerProfile();
 let gamePresetsCache = {};
 let activeGamePresetId = DEFAULT_GAME_PRESET_ID;
 let gamePresetStorageReady = false;
@@ -168,8 +173,149 @@ function generateTeamId(){
   if (window.crypto?.randomUUID) return `team-${window.crypto.randomUUID()}`;
   return `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+function generateMemberId(){
+  if (window.crypto?.randomUUID) return `member-${window.crypto.randomUUID()}`;
+  return `member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 function normalizeTeamName(value){
   return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+function normalizeMemberName(value){
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+function currentMemberId(){
+  return String(localStorage.getItem(REMEMBERED_MEMBER_ID_KEY) || "").trim();
+}
+function ensureRememberedMemberId(){
+  const existing = currentMemberId();
+  if (existing) return existing;
+  const created = generateMemberId();
+  localStorage.setItem(REMEMBERED_MEMBER_ID_KEY, created);
+  return created;
+}
+function clearRememberedMemberId(){
+  localStorage.removeItem(REMEMBERED_MEMBER_ID_KEY);
+}
+function defaultPlayerProfile(profile = {}){
+  return {
+    name: normalizeMemberName(profile.name || ""),
+    pronouns: normalizeMemberName(profile.pronouns || profile.pronoun || ""),
+    flagKeys: normalizeFlagKeys(profile.flagKeys || profile.flag_keys || profile.flags || [])
+  };
+}
+function loadRememberedPlayerProfile(){
+  return defaultPlayerProfile(readJson(REMEMBERED_PLAYER_PROFILE_KEY, {}));
+}
+function saveRememberedPlayerProfile(profile = playerProfile){
+  playerProfile = defaultPlayerProfile(profile);
+  localStorage.setItem(REMEMBERED_PLAYER_PROFILE_KEY, JSON.stringify(playerProfile));
+}
+function clearRememberedPlayerProfile(){
+  localStorage.removeItem(REMEMBERED_PLAYER_PROFILE_KEY);
+  playerProfile = defaultPlayerProfile();
+}
+function profileHasName(profile = playerProfile){
+  return !!normalizeMemberName(profile?.name);
+}
+function normalizeRosterMember(member = {}){
+  const memberId = String(member.memberId || member.member_id || "").trim();
+  if (!memberId) return null;
+  return {
+    memberId,
+    name: normalizeMemberName(member.name || ""),
+    pronouns: normalizeMemberName(member.pronouns || ""),
+    flagKeys: normalizeFlagKeys(member.flagKeys || member.flag_keys || member.flags || []),
+    joinedAt: Number(member.joinedAt || member.joined_at || 0) || 0,
+    lastUpdatedAt: Number(member.lastUpdatedAt || member.last_updated_at || 0) || 0
+  };
+}
+function normalizeTeamMembers(members){
+  const seen = new Set();
+  return (Array.isArray(members) ? members : []).map(normalizeRosterMember).filter(member => {
+    if (!member || seen.has(member.memberId)) return false;
+    seen.add(member.memberId);
+    return true;
+  }).sort((a, b) => {
+    const aName = normalizeTeamName(a.name || "");
+    const bName = normalizeTeamName(b.name || "");
+    return aName.localeCompare(bName) || (Number(a.joinedAt || 0) - Number(b.joinedAt || 0)) || a.memberId.localeCompare(b.memberId);
+  });
+}
+function memberDisplayName(member){
+  return normalizeMemberName(member?.name) || "Unnamed player";
+}
+function memberLabelText(member){
+  const name = memberDisplayName(member);
+  return member?.pronouns ? `${name} (${member.pronouns})` : name;
+}
+function currentGatePlayerProfile(){
+  return defaultPlayerProfile({
+    name: el("gatePlayerName")?.value || "",
+    pronouns: el("gatePlayerPronouns")?.value || "",
+    flagKeys: selectedGateFlagKeys()
+  });
+}
+function applyGatePlayerProfile(profile = playerProfile){
+  const normalized = defaultPlayerProfile(profile);
+  if (el("gatePlayerName")) el("gatePlayerName").value = normalized.name;
+  if (el("gatePlayerPronouns")) el("gatePlayerPronouns").value = normalized.pronouns;
+  populateFlagOptions(normalized.flagKeys);
+}
+function memberFromProfile(profile = playerProfile, memberId = currentMemberId() || "preview-member", joinedAt = Date.now()){
+  return normalizeRosterMember({
+    memberId,
+    name: profile.name,
+    pronouns: profile.pronouns,
+    flagKeys: profile.flagKeys,
+    joinedAt,
+    lastUpdatedAt: Date.now()
+  });
+}
+function teamMembersForState(targetState = state){
+  return normalizeTeamMembers(targetState?.members || []);
+}
+function currentTeamMember(targetState = state){
+  const members = teamMembersForState(targetState);
+  const memberId = currentMemberId();
+  if (memberId){
+    const exact = members.find(member => member.memberId === memberId);
+    if (exact) return exact;
+  }
+  return profileHasName(playerProfile) ? memberFromProfile(playerProfile) : null;
+}
+function upsertMemberInState(targetState, profile = playerProfile, memberId = ensureRememberedMemberId()){
+  if (!targetState) return [];
+  const existing = teamMembersForState(targetState).find(member => member.memberId === memberId);
+  const nextMember = memberFromProfile(profile, memberId, existing?.joinedAt || Date.now());
+  targetState.members = normalizeTeamMembers([
+    ...teamMembersForState(targetState).filter(member => member.memberId !== memberId),
+    nextMember
+  ]);
+  return targetState.members;
+}
+function removeMemberFromState(targetState, memberId = currentMemberId()){
+  if (!targetState || !memberId) return [];
+  targetState.members = teamMembersForState(targetState).filter(member => member.memberId !== memberId);
+  return targetState.members;
+}
+function memberProfileMarkup(member, opts = {}){
+  if (!member) return "";
+  const compactClass = opts.compact ? " compact" : "";
+  const flags = member.flagKeys?.length ? `<div class="identityBadges memberFlagBadges">${member.flagKeys.map(flag => flagChipMarkup(flag, { compact: true })).join("")}</div>` : "";
+  return `<div class="memberCard${compactClass}"><div class="memberHeading"><strong>${escapeHtml(memberDisplayName(member))}</strong>${member.pronouns ? `<span class="memberPronouns">${escapeHtml(member.pronouns)}</span>` : ""}</div>${flags}</div>`;
+}
+function memberRosterMarkup(members, opts = {}){
+  const normalized = normalizeTeamMembers(members);
+  if (!normalized.length) return opts.emptyText ? `<div class="small memberRosterEmpty">${escapeHtml(opts.emptyText)}</div>` : "";
+  const limit = Number.isFinite(opts.limit) ? opts.limit : normalized.length;
+  const cards = normalized.slice(0, limit).map(member => memberProfileMarkup(member, { compact: !!opts.compact })).join("");
+  const more = normalized.length > limit ? `<div class="small memberRosterMore">+${normalized.length - limit} more</div>` : "";
+  return `<div class="memberRoster${opts.compact ? " compact" : ""}">${cards}${more}</div>`;
+}
+function teamRosterCountText(members){
+  const count = normalizeTeamMembers(members).length;
+  if (!count) return "No players yet";
+  return `${count} ${count === 1 ? "player" : "players"}`;
 }
 function allKnownTeamIds(){
   const ids = new Set();
@@ -202,6 +348,7 @@ function isCreatedTeamState(targetState, team, rawName = targetState?.teamName){
     || Number(targetState?.lastUpdatedAt || 0) > 0
     || Number(targetState?.progressIndex || 0) > 0
     || !!targetState?.finished
+    || teamMembersForState(targetState).length > 0
     || (Array.isArray(targetState?.completed) && targetState.completed.length > 0)
     || normalizeTeamName(identity.displayName) !== normalizeTeamName(teamFallbackLabel(team));
 }
@@ -240,9 +387,13 @@ function clearRememberedTeam(team){
 }
 function releaseTeamSelection(message){
   clearRememberedTeam();
+  clearRememberedPlayerProfile();
+  clearRememberedMemberId();
   teamKey = null;
   state = null;
   gateMode = "join";
+  gateStage = "team";
+  gateProfileTarget = null;
   stopCamera();
   hideAdminOverlay();
   hideAdminPanel();
@@ -253,16 +404,26 @@ function releaseTeamSelection(message){
   setGateMode("join");
   renderGateTeams(null);
   populateMascotOptions();
-  populateFlagOptions();
+  applyGatePlayerProfile(playerProfile);
   if (el("gateTeamName")) el("gateTeamName").value = "";
   setScanInsight();
   renderDeviceState();
   if (message) setFeedback(message, "warn");
 }
 
-function leaveThisDevice(){
+async function leaveThisDevice(){
   if (!rememberedTeam() && !teamKey && !state) return;
   if (!window.confirm("Clear this device's saved team and make it ready for a new squad?")) return;
+  const activeTeam = teamKey || rememberedTeam();
+  const memberId = currentMemberId();
+  if (teamExists(activeTeam) && memberId){
+    const targetState = (activeTeam === teamKey && state) ? { ...state } : (await loadRemoteProgress(activeTeam) || loadLocalState(activeTeam));
+    if (targetState){
+      removeMemberFromState(targetState, memberId);
+      if (!targetState.finished) targetState.lastUpdatedAt = Date.now();
+      await upsertSharedTeamState(activeTeam, targetState);
+    }
+  }
   releaseTeamSelection("This device is ready for a different team.");
 }
 function clueStatusForTeam(team){
@@ -506,7 +667,8 @@ function prideFlagMeta(key){
 }
 
 function flagSummaryText(keys, limit = 3){
-  const labels = flagKeysOrDefault(keys).map(key => prideFlagMeta(key).label);
+  const labels = normalizeFlagKeys(keys).map(key => prideFlagMeta(key).label);
+  if (!labels.length) return "No flags selected";
   if (labels.length <= limit) return labels.join(", ");
   return `${labels.slice(0, limit).join(", ")} +${labels.length - limit}`;
 }
@@ -541,11 +703,11 @@ function updateGateFlagSummary(selectedKeys = selectedGateFlagKeys()){
   const summary = el("gateFlagSummary");
   if (!summary) return;
   if (!selectedKeys.length){
-    summary.textContent = "No identities selected yet. Progress will be used if you start right now.";
+    summary.textContent = "No flags selected yet.";
     return;
   }
   const count = selectedKeys.length;
-  summary.textContent = `${count} ${count === 1 ? "identity" : "identities"} selected: ${flagSummaryText(selectedKeys, 4)}.`;
+  summary.textContent = `${count} ${count === 1 ? "flag" : "flags"} selected: ${flagSummaryText(selectedKeys, 4)}.`;
 }
 
 function renderDecorativeFlagShelf(id, keys){
@@ -596,7 +758,7 @@ function renderFlagCards(selectedKeys = selectedGateFlagKeys(), locked = false, 
   });
 }
 
-function populateFlagOptions(selected = DEFAULT_PRIDE_FLAG_KEYS, locked = false, options = {}){
+function populateFlagOptions(selected = [], locked = false, options = {}){
   const hidden = el("gateFlagValues");
   const search = el("gateFlagSearch");
   const normalized = normalizeFlagKeys(selected);
@@ -667,6 +829,51 @@ function renderActivityTicker(){
   ticker.textContent = sharedActivities[0]?.message || "Rival movement and admin updates will appear here.";
 }
 
+function gateProfileIdentity(){
+  if (!gateProfileTarget) return null;
+  const fallback = gateProfileTarget.teamId ? teamFallbackLabel(gateProfileTarget.teamId) : "Team";
+  return parseTeamIdentity(gateProfileTarget.identityRaw || "", fallback);
+}
+
+function renderGateProfileTarget(){
+  const mount = el("gateProfileTeamSummary");
+  if (!mount) return;
+  if (!gateProfileTarget){
+    mount.innerHTML = "";
+    return;
+  }
+  const identity = gateProfileIdentity();
+  const roster = normalizeTeamMembers(gateProfileTarget.members || []);
+  mount.innerHTML = `
+    <div class="gateProfileTeamCard">
+      ${mascotBadgeMarkup(identity, { showLabel: true })}
+      <div>
+        <strong>${escapeHtml(identity.displayName)}</strong>
+        <div class="small">${escapeHtml(roster.length ? `${teamRosterCountText(roster)} already on this team.` : "You are adding the first player to this team.")}</div>
+      </div>
+    </div>
+    ${memberRosterMarkup(roster, { compact: true, limit: 3, emptyText: "No one has joined this team yet." })}`;
+}
+
+function setGateStage(stage){
+  gateStage = stage === "profile" ? "profile" : "team";
+  if (el("gateTeamStage")) el("gateTeamStage").classList.toggle("hidden", gateStage !== "team");
+  if (el("gateProfileStage")) el("gateProfileStage").classList.toggle("hidden", gateStage !== "profile");
+  if (el("gateModeSwitch")) el("gateModeSwitch").classList.toggle("hidden", gateStage === "profile");
+  if (el("gateBackBtn")) el("gateBackBtn").classList.toggle("hidden", gateStage !== "profile");
+  if (el("startGameBtn")) el("startGameBtn").textContent = gateStage === "profile" ? "Start hunt" : "Continue";
+  renderGateProfileTarget();
+  updateGateSelectionStatus();
+  renderDeviceState();
+}
+
+function openProfileStage(target){
+  gateProfileTarget = target;
+  applyGatePlayerProfile(playerProfile);
+  renderGateProfileTarget();
+  setGateStage("profile");
+}
+
 function updateThemePill(rawValue = state?.teamName, team = teamKey){
   const pill = el("teamThemePill");
   if (!pill){
@@ -679,7 +886,7 @@ function updateThemePill(rawValue = state?.teamName, team = teamKey){
   }
   const identity = teamIdentity(rawValue, team);
   pill.className = `teamThemePill ${identity.mascot.badgeClass}`;
-  pill.textContent = `${identity.mascot.emoji} ${identity.mascot.title} • ${flagSummaryText(identity.flagKeys, 1)}`;
+  pill.textContent = `${identity.mascot.emoji} ${identity.mascot.title}`;
 }
 
 function renderDeviceState(){
@@ -693,7 +900,7 @@ function renderDeviceState(){
     || (gateMode === "create" ? currentGateIdentityRaw() : null)
     || cachedRawTeamName(activeTeam)
     || (activeTeam ? encodeTeamIdentity(teamFallbackLabel(activeTeam), DEFAULT_MASCOT, teamFallbackLabel(activeTeam)) : null);
-  const assigned = !!remembered || (!!teamKey && !!state && !gateVisible);
+  const assigned = (!!remembered || (!!teamKey && !!state)) && !gateVisible;
   if (badge){
     if (!assigned){
       if (activeTeam && rawValue){
@@ -709,16 +916,21 @@ function renderDeviceState(){
   }
   if (meta){
     if (!assigned){
-      if (activeTeam && gateMode === "join"){
+      if (gateStage === "profile" && gateProfileTarget){
+        meta.textContent = "Add your player profile, then your name, pronouns, and flags will appear on the shared team roster.";
+      } else if (activeTeam && gateMode === "join"){
         meta.textContent = `Ready to join ${teamIdentity(rawValue, activeTeam).displayName} on this device.`;
       } else {
         meta.textContent = gateMode === "create"
-          ? "Create a team, choose a mascot, stack identities, and start the Pride race."
+          ? "Create a team, choose a mascot, then continue to the player profile step."
           : "Join an existing team or create a new one.";
       }
     } else {
       const identity = teamIdentity(rawValue, activeTeam);
-      meta.textContent = `${identity.mascot.title}: ${identity.mascot.flavor} Pride mix: ${flagSummaryText(identity.flagKeys, 3)}.`;
+      const profileLine = profileHasName(playerProfile)
+        ? `${memberLabelText(playerProfile)}${playerProfile.flagKeys.length ? ` • ${flagSummaryText(playerProfile.flagKeys, 2)}` : ""}. `
+        : "";
+      meta.textContent = `${profileLine}${identity.mascot.title}: ${identity.mascot.flavor}`;
     }
   }
   if (gateNote){
@@ -742,6 +954,13 @@ function renderDeviceState(){
 function updateGateSelectionStatus(locked = false, identity = parseTeamIdentity(currentGateIdentityRaw(), "Team")){
   const status = el("gateSelectionStatus");
   if (!status) return;
+  if (gateStage === "profile"){
+    const profileIdentity = gateProfileIdentity();
+    status.textContent = profileIdentity
+      ? `Add your player details for ${profileIdentity.displayName}. These show up on the shared roster.`
+      : "Add your player details to finish joining.";
+    return;
+  }
   if (gateMode === "join"){
     status.textContent = teamKey
       ? `Join ${teamIdentity(cachedRawTeamName(teamKey) || teamFallbackLabel(teamKey), teamKey).displayName} on this device.`
@@ -750,7 +969,7 @@ function updateGateSelectionStatus(locked = false, identity = parseTeamIdentity(
   }
   status.textContent = locked
     ? `${identity.displayName} is ready to create.`
-    : "Create a team, pick a mascot, stack one or more identities, and the site will assign a random clue order with a live finish clock.";
+    : "Create a team, pick a mascot, and continue to the player profile step.";
 }
 
 function renderMascotCards(selected = DEFAULT_MASCOT, locked = false){
@@ -779,14 +998,14 @@ function renderMascotCards(selected = DEFAULT_MASCOT, locked = false){
 
 function encodeTeamIdentity(displayName, mascotKey = DEFAULT_MASCOT, fallbackName = "Team", flagKeys = DEFAULT_PRIDE_FLAG_KEYS){
   const cleanName = (displayName || fallbackName || "Team").trim() || fallbackName || "Team";
-  return `${cleanName}${TEAM_IDENTITY_SEPARATOR}${normalizeMascotKey(mascotKey)}${TEAM_IDENTITY_SEPARATOR}${flagKeysOrDefault(flagKeys).join(",")}`;
+  return `${cleanName}${TEAM_IDENTITY_SEPARATOR}${normalizeMascotKey(mascotKey)}`;
 }
 
 function parseTeamIdentity(rawValue, fallbackName = "Team"){
   const fallback = (fallbackName || "Team").trim() || "Team";
   if (!rawValue || typeof rawValue !== "string") {
     const mascot = mascotMeta(DEFAULT_MASCOT);
-    const flagKeys = DEFAULT_PRIDE_FLAG_KEYS.slice();
+    const flagKeys = [];
     const flags = flagKeys.map(prideFlagMeta);
     return { raw: encodeTeamIdentity(fallback, DEFAULT_MASCOT, fallback, flagKeys), displayName: fallback, mascotKey: DEFAULT_MASCOT, mascot, flagKeys, flags, primaryFlag: flags[0] };
   }
@@ -794,7 +1013,7 @@ function parseTeamIdentity(rawValue, fallbackName = "Team"){
   const displayName = (pieces[0] || fallback).trim() || fallback;
   const mascotKey = normalizeMascotKey((pieces[1] || "").trim());
   const mascot = mascotMeta(mascotKey);
-  const flagKeys = flagKeysOrDefault((pieces[2] || "").split(","));
+  const flagKeys = normalizeFlagKeys((pieces[2] || "").split(","));
   const flags = flagKeys.map(prideFlagMeta);
   return { raw: encodeTeamIdentity(displayName, mascotKey, fallback, flagKeys), displayName, mascotKey, mascot, flagKeys, flags, primaryFlag: flags[0] };
 }
@@ -830,13 +1049,12 @@ function applyTeamTheme(rawValue, team = teamKey){
   body.classList.add(teamThemeClass(rawValue, team));
 }
 
-function updateMascotPreview(selected, flagKeys = selectedGateFlagKeys()){
+function updateMascotPreview(selected){
   const preview = el("gateMascotPreview");
   if (!preview) return;
   const mascot = mascotMeta(selected);
-  const activeFlagKeys = flagKeysOrDefault(flagKeys);
   preview.className = `mascotPreviewCard ${mascot.badgeClass}`;
-  preview.innerHTML = `<span class="mascotPreviewEmoji">${mascot.emoji}</span><div><strong>${escapeHtml(mascot.label)} • ${escapeHtml(mascot.title)}</strong><div class="small">${escapeHtml(mascot.flavor)} This mascot becomes your badge, color theme, and race vibe.</div><div class="identityBadges previewFlagBadges">${activeFlagKeys.map(flag => flagChipMarkup(flag, { compact: true })).join("")}</div></div>`;
+  preview.innerHTML = `<span class="mascotPreviewEmoji">${mascot.emoji}</span><div><strong>${escapeHtml(mascot.label)} • ${escapeHtml(mascot.title)}</strong><div class="small">${escapeHtml(mascot.flavor)} This mascot becomes the team badge, color theme, and race vibe.</div></div>`;
 }
 
 function setTeamIdentityInputs(rawValue, locked){
@@ -858,8 +1076,7 @@ function setTeamIdentityInputs(rawValue, locked){
     select.disabled = !!locked;
   }
   renderMascotCards(identity.mascotKey, locked);
-  populateFlagOptions(identity.flagKeys, locked);
-  updateMascotPreview(identity.mascotKey, identity.flagKeys);
+  updateMascotPreview(identity.mascotKey);
   updateGateSelectionStatus(locked, identity);
   renderDeviceState();
 }
@@ -884,13 +1101,13 @@ function populateMascotOptions(selected = DEFAULT_MASCOT){
     });
     select.addEventListener("change", () => {
       renderMascotCards(select.value, !!select.disabled);
-      updateMascotPreview(select.value, selectedGateFlagKeys());
+      updateMascotPreview(select.value);
       renderDeviceState();
     });
   }
   select.value = normalizeMascotKey(selected);
   renderMascotCards(select.value, !!select.disabled);
-  updateMascotPreview(select.value, selectedGateFlagKeys());
+  updateMascotPreview(select.value);
 }
 
 function joinableTeamSummaries(){
@@ -918,23 +1135,21 @@ function findExistingTeamByName(displayName){
 
 function setGateMode(mode){
   gateMode = mode === "create" ? "create" : "join";
+  gateProfileTarget = null;
   const joinBtn = el("gateModeJoinBtn");
   const createBtn = el("gateModeCreateBtn");
   const joinWrap = el("gateJoinWrap");
   const createWrap = el("gateCreateWrap");
-  const startBtn = el("startGameBtn");
   if (joinBtn) joinBtn.classList.toggle("active", gateMode === "join");
   if (createBtn) createBtn.classList.toggle("active", gateMode === "create");
   if (joinWrap) joinWrap.classList.toggle("hidden", gateMode !== "join");
   if (createWrap) createWrap.classList.toggle("hidden", gateMode !== "create");
-  if (startBtn) startBtn.textContent = gateMode === "create" ? "Create team and go live" : "Join team";
+  setGateStage("team");
   if (gateMode === "create"){
     teamKey = null;
     setTeamIdentityInputs(currentGateIdentityRaw(), false);
   }
   renderGateTeams(teamKey);
-  updateGateSelectionStatus();
-  renderDeviceState();
 }
 
 function buildEggProgressDots(){
@@ -1106,6 +1321,7 @@ function defaultState(teamLabel = "Team", sequence = generateRandomSequence()){
     progressIndex: 0,
     completed: [],
     scannedTokens: [],
+    members: [],
     usedHints: 0,
     nextHintAt: null,
     revealedHintClueId: null,
@@ -1131,6 +1347,7 @@ function loadLocalState(team){
   const saved = readJson(storageKey(team), defaultState(teamFallbackLabel(team), sequenceForTeam(team)));
   if (!saved || typeof saved !== "object") return defaultState(teamFallbackLabel(team), sequenceForTeam(team));
   saved.sequence = normalizeSequence(saved.sequence || sequenceForTeam(team, saved));
+  saved.members = normalizeTeamMembers(saved.members);
   if (saved && typeof saved.revealedHintClueId === "undefined") saved.revealedHintClueId = null;
   if (saved && typeof saved.completedAt === "undefined") saved.completedAt = 0;
   if (saved && typeof saved.completionTimeMs === "undefined") saved.completionTimeMs = saved.finished ? completionTimeMsForState(saved) : 0;

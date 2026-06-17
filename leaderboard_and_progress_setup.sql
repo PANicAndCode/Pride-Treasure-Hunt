@@ -17,6 +17,7 @@ create table if not exists public.team_progress_pride_hunt (
   progress_index integer not null default 0,
   completed jsonb not null default '[]'::jsonb,
   scanned_tokens jsonb not null default '[]'::jsonb,
+  members jsonb not null default '[]'::jsonb,
   used_hints integer not null default 0,
   next_hint_at bigint,
   revealed_hint_clue_id integer,
@@ -126,9 +127,9 @@ begin
 end $$;
 
 insert into public.team_progress_pride_hunt
-  (team_id, team_name, sequence, progress_index, completed, scanned_tokens, used_hints, next_hint_at, revealed_hint_clue_id, finished, started_at, finished_at, completion_time_ms, last_updated_at, map_enabled)
+  (team_id, team_name, sequence, progress_index, completed, scanned_tokens, members, used_hints, next_hint_at, revealed_hint_clue_id, finished, started_at, finished_at, completion_time_ms, last_updated_at, map_enabled)
 values
-  ('__settings__', 'Shared Settings', '[]'::jsonb, 0, '[]'::jsonb, '[]'::jsonb, 0, null, null, false, 0, 0, 0, 0, false)
+  ('__settings__', 'Shared Settings', '[]'::jsonb, 0, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, 0, null, null, false, 0, 0, 0, 0, false)
 on conflict (team_id) do update
 set map_enabled = excluded.map_enabled;
 

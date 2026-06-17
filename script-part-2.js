@@ -30,8 +30,25 @@ function compareBoardRows(a, b){
     || a.teamName.localeCompare(b.teamName);
 }
 
+function boardSnapshotFor(key){
+  const progress = progressStateFor(key);
+  const board = cachedBoardState(key) || {};
+  return {
+    progress,
+    rawName: progress?.teamName || board.team_name || board.teamName || teamFallbackLabel(key),
+    found: Number(board.found ?? progress?.completed?.length ?? 0),
+    finished: !!(board.finished ?? progress?.finished ?? false),
+    lastUpdatedAt: Number(board.lastUpdatedAt ?? board.last_updated_at ?? progress?.lastUpdatedAt ?? 0),
+    startedAt: Number(board.startedAt ?? board.started_at ?? progress?.startedAt ?? 0),
+    completedAt: Number(board.completedAt ?? board.completed_at ?? board.finished_at ?? progress?.completedAt ?? finishedAtForState(progress) ?? 0),
+    completionTimeMs: Number(board.completionTimeMs ?? board.completion_time_ms ?? progress?.completionTimeMs ?? completionTimeMsForState(progress) ?? 0)
+  };
+}
+
 function buildBoardRow(key, rawName, found, finished, lastUpdatedAt, startedAt = 0, completedAt = 0, completionTimeMs = 0){
   const identity = teamIdentity(rawName, key);
+  const progress = progressStateFor(key);
+  const members = teamMembersForState(progress);
   const elapsedMs = finished ? Number(completionTimeMs || 0) : elapsedTimeMsForState({
     startedAt: Number(startedAt || 0),
     finished: false,
@@ -50,35 +67,41 @@ function buildBoardRow(key, rawName, found, finished, lastUpdatedAt, startedAt =
     completionTimeMs: Number(completionTimeMs || 0),
     elapsedMs,
     lastUpdatedAt,
-    sequence: sequenceForTeam(key, liveProgressCache[key] || loadLocalState(key))
+    members,
+    sequence: sequenceForTeam(key, progress)
   };
 }
 
 function localBoardRows(){
-  const board = readJson(leaderboardKey(), {});
-  return visibleTeamIds().map(key => buildBoardRow(
-    key,
-    board[key]?.teamName || loadLocalState(key)?.teamName || teamFallbackLabel(key),
-    board[key]?.found || 0,
-    board[key]?.finished || false,
-    board[key]?.lastUpdatedAt || 0,
-    board[key]?.startedAt || loadLocalState(key)?.startedAt || 0,
-    board[key]?.completedAt || loadLocalState(key)?.completedAt || 0,
-    board[key]?.completionTimeMs || loadLocalState(key)?.completionTimeMs || 0
-  )).sort(compareBoardRows);
+  return visibleTeamIds().map(key => {
+    const snapshot = boardSnapshotFor(key);
+    return buildBoardRow(
+      key,
+      snapshot.rawName,
+      snapshot.found,
+      snapshot.finished,
+      snapshot.lastUpdatedAt,
+      snapshot.startedAt,
+      snapshot.completedAt,
+      snapshot.completionTimeMs
+    );
+  }).sort(compareBoardRows);
 }
 
 function remoteBoardRows(){
-  return visibleTeamIds().map(key => buildBoardRow(
-    key,
-    liveBoardCache[key]?.team_name || liveProgressCache[key]?.teamName || teamFallbackLabel(key),
-    liveBoardCache[key]?.found || liveProgressCache[key]?.completed?.length || 0,
-    liveBoardCache[key]?.finished || liveProgressCache[key]?.finished || false,
-    liveBoardCache[key]?.last_updated_at || liveProgressCache[key]?.lastUpdatedAt || 0,
-    liveBoardCache[key]?.started_at || liveProgressCache[key]?.startedAt || 0,
-    liveBoardCache[key]?.finished_at || liveProgressCache[key]?.completedAt || 0,
-    liveBoardCache[key]?.completion_time_ms || liveProgressCache[key]?.completionTimeMs || 0
-  )).sort(compareBoardRows);
+  return visibleTeamIds().map(key => {
+    const snapshot = boardSnapshotFor(key);
+    return buildBoardRow(
+      key,
+      snapshot.rawName,
+      snapshot.found,
+      snapshot.finished,
+      snapshot.lastUpdatedAt,
+      snapshot.startedAt,
+      snapshot.completedAt,
+      snapshot.completionTimeMs
+    );
+  }).sort(compareBoardRows);
 }
 
 function boardRows(){
@@ -217,6 +240,7 @@ function normalizeRemoteProgress(data){
     completionTimeMs: data.completion_time_ms ?? 0,
     lastUpdatedAt: data.last_updated_at,
     revealedHintClueId: data.revealed_hint_clue_id ?? null,
+    members: normalizeTeamMembers(data.members),
     mapEnabled: typeof data.map_enabled === "boolean" ? data.map_enabled : undefined
   };
 }
@@ -251,6 +275,7 @@ function presetStorageMissing(error){
 function sharedSyncStorageMissing(error){
   const message = String(error?.message || "");
   return error?.code === "42P01"
+    || error?.code === "42703"
     || error?.code === "PGRST205"
     || /leaderboard_pride_hunt/i.test(message)
     || /team_progress_pride_hunt/i.test(message);
@@ -699,6 +724,7 @@ async function pushRemoteProgress(){
     progress_index: state.progressIndex,
     completed: state.completed,
     scanned_tokens: state.scannedTokens,
+    members: teamMembersForState(state),
     used_hints: state.usedHints,
     next_hint_at: state.nextHintAt,
     revealed_hint_clue_id: state.revealedHintClueId,
@@ -710,6 +736,10 @@ async function pushRemoteProgress(){
   };
   const { error } = await supabaseClient.from(PROGRESS_TABLE).upsert(payload, { onConflict: "team_id" });
   if (error) {
+    if (sharedSyncStorageMissing(error) || /members/i.test(String(error?.message || ""))) {
+      enableLocalSyncFallback("Run the updated roster migration SQL once to enable live team rosters.");
+      return;
+    }
     console.error(error);
     setSyncState("error", "Shared progress write failed. Retrying on the next refresh.");
   } else {
@@ -779,6 +809,7 @@ async function upsertSharedTeamState(team, targetState){
     progress_index: targetState.progressIndex,
     completed: targetState.completed,
     scanned_tokens: targetState.scannedTokens,
+    members: teamMembersForState(targetState),
     used_hints: targetState.usedHints,
     next_hint_at: targetState.nextHintAt,
     revealed_hint_clue_id: targetState.revealedHintClueId,
@@ -801,6 +832,10 @@ async function upsertSharedTeamState(team, targetState){
   }, { onConflict: "team_id" });
 
   if (progressResult.error || boardResult.error){
+    if (sharedSyncStorageMissing(progressResult.error || boardResult.error) || /members/i.test(String(progressResult.error?.message || boardResult.error?.message || ""))) {
+      enableLocalSyncFallback("Run the updated roster migration SQL once to enable live team rosters.");
+      return;
+    }
     console.error(progressResult.error || boardResult.error);
     setSyncState("error", "Shared progress write failed. Retrying on the next refresh.");
   } else {
@@ -831,10 +866,16 @@ function renderGateTeams(selected){
   if (selected && !teams.some(entry => entry.id === selected)) teamKey = null;
   if (emptyNote) emptyNote.classList.toggle("hidden", teams.length > 0);
   teams.forEach(entry => {
+    const roster = teamMembersForState(entry.progress);
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "teamBtn" + (entry.id === selected ? " selected" : "");
-    btn.innerHTML = `<span class="teamBtnLabel">${escapeHtml(entry.identity.displayName)}</span><div class="teamBtnBadges">${identityBadgeStripMarkup(entry.identity, { showMascotLabel: true, flagLimit: 2 })}</div><span class="teamBtnMeta">${escapeHtml(entry.finished ? "Finished race" : entry.found > 0 ? `${entry.found} clues cleared` : "Ready to join")}</span>`;
+    btn.innerHTML = `
+      <span class="teamBtnLabel">${escapeHtml(entry.identity.displayName)}</span>
+      <div class="teamBtnBadges">${mascotBadgeMarkup(entry.identity, { showLabel: true })}</div>
+      <div class="teamBtnRosterMeta">${escapeHtml(teamRosterCountText(roster))}</div>
+      ${memberRosterMarkup(roster, { compact: true, limit: 2, emptyText: "No players added yet." })}
+      <span class="teamBtnMeta">${escapeHtml(entry.finished ? "Finished race" : entry.found > 0 ? `${entry.found} clues cleared` : "Ready to join")}</span>`;
     btn.addEventListener("click", async () => {
       const selectedTeam = entry.id;
       teamKey = selectedTeam;
@@ -867,7 +908,8 @@ function renderTop(){
   el("hintStatus").textContent = !clueAllowsHint(activeId)
     ? "No hint for this clue"
     : (locked ? `Next hint in ${fmtCountdown(toMillis(state.nextHintAt) - now)}` : (stats.remaining <= 0 ? "No hints left" : "Hint ready"));
-  el("teamDisplay").innerHTML = `<div class="teamDisplayBlock"><strong>${escapeHtml(identity.displayName)}</strong>${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}</div>`;
+  const roster = teamMembersForState(state);
+  el("teamDisplay").innerHTML = `<div class="teamDisplayBlock"><strong>${escapeHtml(identity.displayName)}</strong>${mascotBadgeMarkup(identity, { showLabel: true })}<div class="small">${escapeHtml(teamRosterCountText(roster))}</div>${memberRosterMarkup(roster, { compact: true, limit: 6, emptyText: "No players listed yet." })}</div>`;
   applyTeamTheme(state.teamName, teamKey);
   renderDeviceState();
   updateFinalMissionMode();
@@ -943,11 +985,13 @@ function renderBoard(){
         <div class="leaderText">
           <strong>${place}. ${escapeHtml(identity.displayName)}</strong>
           <div class="leaderSubline">
-            ${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}
+            ${mascotBadgeMarkup(identity, { showLabel: true })}
+            <span class="leaderMiniMeta">${escapeHtml(teamRosterCountText(row.members))}</span>
             <span class="leaderMiniMeta">${escapeHtml(row.finished ? "Finished" : row.found > 0 ? `${row.found} clues cleared` : "Ready")}</span>
             ${place <= 3 && row.finished ? `<span class="candyBadge">🏅 ${escapeHtml(placementPrizeText(place))}</span>` : ""}
           </div>
           <div class="muted">${row.finished ? `${placementLabel(place)} • ${formatDuration(row.completionTimeMs)} • ${placementPrizeText(place)} with the host` : (row.sequence?.[row.found] === FINAL_CLUE_ID ? `Final clue unlocked • ${formatDuration(row.elapsedMs)} live` : `${row.found} clues cleared • ${formatDuration(row.elapsedMs)} live`)}</div>
+          ${memberRosterMarkup(row.members, { compact: true, limit: 4, emptyText: "No players listed yet." })}
         </div>
       </div>
       <div class="leaderRight">
@@ -977,16 +1021,19 @@ function renderAdminStatuses(){
     const lastSolvedId = Array.isArray(progress.completed) && progress.completed.length ? progress.completed[progress.completed.length - 1] : null;
     const lastSolved = lastSolvedId ? CLUES[lastSolvedId] : null;
     const identity = teamIdentity(progress.teamName, key);
+    const roster = teamMembersForState(progress);
     const row = document.createElement("div");
     row.className = `adminStatusRow ${identity.mascot.badgeClass}`;
     row.innerHTML = `
       <strong>${escapeHtml(identity.displayName)}</strong>
       <div class="leaderSubline">
-        ${identityBadgeStripMarkup(identity, { showMascotLabel: true, flagLimit: 3 })}
+        ${mascotBadgeMarkup(identity, { showLabel: true })}
+        <span class="leaderMiniMeta">${escapeHtml(teamRosterCountText(roster))}</span>
         <span class="leaderMiniMeta">${escapeHtml(progress.finished ? "Finished" : `Step ${Math.min(progress.progressIndex + 1, teamTotal(key))} of ${teamTotal(key)}`)}</span>
       </div>
       <div class="adminStatusLocation">${progress.finished ? "Finished" : current ? `On clue ${progress.progressIndex + 1}: ${escapeHtml(current.location)}` : "Not started"}</div>
       <div class="adminStatusMeta">${progress.finished ? `Finished in ${formatDuration(completionTimeMsForState(progress))}` : `${progress.completed?.length || 0} clues found • ${formatDuration(elapsedTimeMsForState(progress))} live`}${lastSolved ? ` • Last cleared: ${escapeHtml(lastSolved.location)}` : ""}</div>`;
+    row.innerHTML += memberRosterMarkup(roster, { compact: true, limit: 4, emptyText: "No players listed yet." });
     mount.appendChild(row);
   });
 }

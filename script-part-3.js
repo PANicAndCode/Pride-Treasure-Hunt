@@ -825,7 +825,8 @@ async function adminCopySnapshot(){
     const identity = teamIdentity(progress.teamName, key);
     const currentId = sequenceForTeam(key, progress)[progress.progressIndex];
     const current = currentId ? CLUES[currentId] : null;
-    return `${identity.displayName} (${identity.mascot.label}; ${flagSummaryText(identity.flagKeys, 3)}) - ${progress.finished ? `Finished in ${formatDuration(completionTimeMsForState(progress))}` : current ? `On clue ${progress.progressIndex + 1}: ${current.location}` : "Not started"} - ${progress.finished ? "Clock stopped" : `${formatDuration(elapsedTimeMsForState(progress))} live`} - ${progress.completed?.length || 0} clues found`;
+    const roster = teamMembersForState(progress).map(member => memberLabelText(member)).join(", ") || "No players listed";
+    return `${identity.displayName} (${identity.mascot.label}) - ${progress.finished ? `Finished in ${formatDuration(completionTimeMsForState(progress))}` : current ? `On clue ${progress.progressIndex + 1}: ${current.location}` : "Not started"} - ${progress.finished ? "Clock stopped" : `${formatDuration(elapsedTimeMsForState(progress))} live`} - ${progress.completed?.length || 0} clues found - Roster: ${roster}`;
   }).join("\n");
   try {
     await navigator.clipboard.writeText(lines);
