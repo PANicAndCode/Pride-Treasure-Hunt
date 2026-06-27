@@ -117,10 +117,10 @@ function renderFinalEggCard(){
     card.classList.remove("hidden");
     card.classList.add("finalMissionGlow");
     const place = finishPlacementForTeam(teamKey) || 1;
-    const prizeText = placementPrizeText(place);
-    badge.textContent = "🏆 Victory locked";
-    title.textContent = `Your team finished in ${placementLabel(place)} with a time of ${formatDuration(completionTimeMsForState(state))}.`;
-    copy.textContent = `See the host for ${prizeText}. Your clock is locked and the leaderboard has been updated.`;
+    const finishTime = formatDuration(completionTimeMsForState(state));
+    badge.textContent = "🏆 Finish locked";
+    title.textContent = `You are currently in ${placementLabel(place)} with a time of ${finishTime}.`;
+    copy.textContent = "Your clock is locked. Final standings will be announced at the end of the event, and prizes will be given out then.";
     viewBtn.classList.remove("hidden");
     return;
   }
@@ -148,14 +148,11 @@ function showVictoryOverlay(){
   if (!teamKey || !state || !state.finished) return;
   hideMissionOverlay();
   const place = finishPlacementForTeam(teamKey) || 1;
-  const prizeText = placementPrizeText(place);
   const finishTime = formatDuration(completionTimeMsForState(state));
   if (el("victoryTitle")) el("victoryTitle").textContent = `${teamIdentity(state.teamName, teamKey).displayName} found the final checkpoint!`;
-  if (el("victoryPlacement")) el("victoryPlacement").textContent = `Your team came in ${placementLabel(place)} with a time of ${finishTime} and earned ${prizeText}.`;
+  if (el("victoryPlacement")) el("victoryPlacement").textContent = `You are currently in ${placementLabel(place)} with a time of ${finishTime}.`;
   if (el("victoryRankWord")) el("victoryRankWord").textContent = placementLabel(place).replace(/^./, char => char.toUpperCase());
-  if (el("victoryMeta")) el("victoryMeta").textContent = place <= 3
-    ? `See the host for your ${prizeText}. The final checkpoint was at ${finalEggInfo().location}. Your official finish time was ${finishTime}, and your team earned the ${place === 1 ? "gold" : place === 2 ? "silver" : "bronze"} trophy.`
-    : `The final checkpoint was at ${finalEggInfo().location}. Your official finish time was ${finishTime}, and the leaderboard has been updated with your final placement.`;
+  if (el("victoryMeta")) el("victoryMeta").textContent = `At the end of the event, final standings will be announced and prizes will be given out. Your finish time is locked at ${finishTime}.`;
   const overlay = el("victoryOverlay");
   if (overlay) overlay.classList.remove("hidden");
 }
