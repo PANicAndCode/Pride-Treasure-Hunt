@@ -311,6 +311,8 @@ function replacePresetCache(records = [], preferredActiveId = null){
 }
 
 async function fetchGamePresets(options = {}){
+  const adminPanelOpen = !!el("adminPanel") && !el("adminPanel").classList.contains("hidden");
+  const shouldRefreshAdminManager = options.forceAdminRefresh === true || !adminPanelOpen;
   if (!supabaseReady) return presetList();
   try {
     const { data, error } = await supabaseClient.from(GAME_PRESETS_TABLE).select("*");
@@ -318,20 +320,20 @@ async function fetchGamePresets(options = {}){
       if (presetStorageMissing(error)) gamePresetStorageReady = false;
       else console.error(error);
       renderAdminPresetStatus();
-      if (typeof renderAdminPresetManager === "function") renderAdminPresetManager();
+      if (shouldRefreshAdminManager && typeof renderAdminPresetManager === "function") renderAdminPresetManager();
       return presetList();
     }
     gamePresetStorageReady = true;
     replacePresetCache(data || [], options.preferredActiveId || null);
     renderAdminPresetStatus();
-    if (typeof renderAdminPresetManager === "function") renderAdminPresetManager();
+    if (shouldRefreshAdminManager && typeof renderAdminPresetManager === "function") renderAdminPresetManager();
     if (options.rerender !== false) await renderAll({ persist: false });
     return presetList();
   } catch (error) {
     if (presetStorageMissing(error)) gamePresetStorageReady = false;
     else console.error(error);
     renderAdminPresetStatus();
-    if (typeof renderAdminPresetManager === "function") renderAdminPresetManager();
+    if (shouldRefreshAdminManager && typeof renderAdminPresetManager === "function") renderAdminPresetManager();
     return presetList();
   }
 }

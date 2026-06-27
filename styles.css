@@ -860,6 +860,50 @@ p{
     border-color:#473454;
   }
 
+  .menuBtn,
+  .adminCloseX,
+  .gateRabbitBtn,
+  .commandTeamPill,
+  .syncBadge,
+  .finalEggCard,
+  .adminClueCard.finalClue{
+    background:rgba(20,15,29,.92);
+    color:var(--text);
+    border-color:#473454;
+  }
+
+  .menuBtn.active,
+  .gateModeBtn.active,
+  .commandTeamPill{
+    background:var(--theme-soft);
+    color:var(--theme-ink);
+    border-color:#5f3550;
+  }
+
+  .syncLive{
+    color:#9ff3c5;
+    border-color:#2f8a5d;
+    background:#172b22;
+  }
+
+  .syncPending{
+    color:#ffd98c;
+    border-color:#8a631c;
+    background:#31240f;
+  }
+
+  .syncLocal{
+    color:#cceaff;
+    border-color:#29516f;
+    background:#122434;
+  }
+
+  .syncError{
+    color:#ffc8d4;
+    border-color:#86415b;
+    background:#341420;
+  }
+
   button.primary,
   .buttonLike.primary{
     color:#1f0d25;
@@ -883,6 +927,12 @@ p{
     background:linear-gradient(180deg,#2a1823,#24131e);
     border-color:#5f3550;
     color:#ffd7ea;
+  }
+
+  .finalEggCard.finalMissionGlow{
+    background:linear-gradient(180deg,#2b1522,#221626);
+    border-color:#7b3f65;
+    box-shadow:0 18px 34px rgba(0,0,0,.28);
   }
 
   .flagChip{
