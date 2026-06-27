@@ -846,6 +846,7 @@ async function upsertSharedTeamState(team, targetState){
 }
 
 function setPage(pageId){
+  hideMissionOverlay();
   document.querySelectorAll(".page").forEach(p => p.classList.remove("activePage"));
   const page = el(pageId);
   if (page) page.classList.add("activePage");

@@ -81,6 +81,7 @@ const PROGRESS_TABLE = "team_progress_pride_hunt";
 const GAME_PRESETS_TABLE = "game_presets_pride_hunt";
 const SHARED_SETTINGS_TEAM_ID = "__settings__";
 const FINAL_CLUE_ID = 11;
+const MISSION_OVERLAY_AUTO_HIDE_MS = 4500;
 const DEFAULT_GAME_PRESET_ID = "preset-default";
 const DEFAULT_GAME_PRESET_NAME = "Default Pride Hunt";
 const LEGACY_TEAMS = typeof TEAMS === "object" ? TEAMS : {};
@@ -121,6 +122,7 @@ let playerProfile = loadRememberedPlayerProfile();
 let gamePresetsCache = {};
 let activeGamePresetId = DEFAULT_GAME_PRESET_ID;
 let gamePresetStorageReady = false;
+let missionOverlayTimer = null;
 
 function el(id){ return document.getElementById(id); }
 function storageKey(team){ return `${STORAGE_PREFIX}-${team}`; }
@@ -1211,6 +1213,10 @@ function burstCelebration(type = "success"){
 }
 
 function showMissionOverlay({ badge = "✅ Mission update", title = "Mission unlocked", copy = "You unlocked your next clue.", flavor = "A fresh page just slid out of the dossier.", stamp = "CASE FILE OPENED", meta = "Head back to the mission board for your next riddle.", page = "choresPage" } = {}){
+  if (missionOverlayTimer){
+    clearTimeout(missionOverlayTimer);
+    missionOverlayTimer = null;
+  }
   if (el("missionBadge")) el("missionBadge").textContent = badge;
   if (el("missionTitle")) el("missionTitle").textContent = title;
   if (el("missionCopy")) el("missionCopy").textContent = copy;
@@ -1223,10 +1229,19 @@ function showMissionOverlay({ badge = "✅ Mission update", title = "Mission unl
     setPage(page);
   };
   const overlay = el("missionOverlay");
-  if (overlay) overlay.classList.remove("hidden");
+  if (overlay) {
+    overlay.classList.remove("hidden");
+    missionOverlayTimer = window.setTimeout(() => {
+      hideMissionOverlay();
+    }, MISSION_OVERLAY_AUTO_HIDE_MS);
+  }
 }
 
 function hideMissionOverlay(){
+  if (missionOverlayTimer){
+    clearTimeout(missionOverlayTimer);
+    missionOverlayTimer = null;
+  }
   const overlay = el("missionOverlay");
   if (overlay) overlay.classList.add("hidden");
 }

@@ -146,6 +146,7 @@ function hideVictoryOverlay(){
 
 function showVictoryOverlay(){
   if (!teamKey || !state || !state.finished) return;
+  hideMissionOverlay();
   const place = finishPlacementForTeam(teamKey) || 1;
   const prizeText = placementPrizeText(place);
   const finishTime = formatDuration(completionTimeMsForState(state));
