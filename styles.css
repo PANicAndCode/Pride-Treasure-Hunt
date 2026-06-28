@@ -251,6 +251,29 @@ body.finalMissionMode{
 .gateDeviceTools{display:grid;gap:10px}
 .gateDeviceNote{margin:0}
 
+#teamGate{
+  align-items:flex-start;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+#teamGate .gateCard{
+  margin:18px auto;
+}
+
+#gateJoinWrap{
+  min-height:0;
+}
+
+#gateTeamButtons{
+  max-height:min(50vh, 440px);
+  overflow-y:auto;
+  align-content:start;
+  padding-right:4px;
+  -webkit-overflow-scrolling:touch;
+}
+
 .fieldGuide{margin:16px 0 18px;padding:16px 18px;border-radius:24px;border:1px solid #f0dfca;background:linear-gradient(180deg,#fffdf8,#fff7ed)}
 .fieldGuideRow{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .fieldGuideLabel{font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--theme-ink)}
@@ -302,6 +325,8 @@ body.finalMissionMode{
   .gateStepRail{grid-template-columns:1fr}
   .gateModeSwitch{grid-template-columns:1fr}
   .heroChecklist{grid-template-columns:1fr}
+  #teamGate .gateCard{margin:0 auto}
+  #gateTeamButtons{max-height:44vh}
 }
 
 @media (max-width: 700px){
